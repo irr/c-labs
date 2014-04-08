@@ -1,0 +1,10 @@
+import os
+env = Environment(ENV = os.environ, CCFLAGS='-g -std=c++0x', CPPPATH=['/data/C++/cpp-netlib', '/data/C/hiredis'], LIBPATH=['/usr/local/lib'])
+targets = {"rclient" : "rclient.cc"}
+linkflags = ''
+if int(ARGUMENTS.get('static', 0)):
+    linkflags = '-Wl,-static -static-libgcc'
+common_sources = []
+CommonObjects = env.Object(common_sources)
+for target, file in targets.iteritems():
+    env.Program(target = target, source = [file, CommonObjects], LINKFLAGS=linkflags, LIBS = ['hiredis', 'boost_system', 'pthread', 'rt'])

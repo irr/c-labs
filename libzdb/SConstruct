@@ -1,0 +1,10 @@
+env = Environment(CCFLAGS='-std=c99', LIBPATH=['/usr/local/lib'])
+targets = { "test" : "test.c"}
+linkflags = ''
+if int(ARGUMENTS.get('static', 0)):
+    linkflags = '-Wl,-static -static-libgcc'
+common_sources = []
+CommonObjects = env.Object(common_sources)
+for target, file in targets.iteritems():
+    env.Program(target = target, source = [file, CommonObjects], CPPPATH=['/usr/local/include/zdb'], LIBPATH=['/usr/local/lib'], LINKFLAGS=linkflags, LIBS = [ 'zdb', 'rt', 'pthread'])
+env.Clean('.', '.sconsign.dblite')

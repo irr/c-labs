@@ -1,0 +1,7 @@
+env = Environment()
+targets = { "main" : "main.cpp" }
+cppflags = '-std=c++0x -ggdb -DDEBUG -DDLIB_NO_GUI_SUPPORT -I./lib -Wall'
+common_sources = ["lib/dlib/all/source.cpp"]
+CommonObjects = env.Object(common_sources)
+for target, file in targets.iteritems():
+    env.Program(target = target, source = [file, CommonObjects], CC='g++', CPPFLAGS=cppflags, LIBS = ['pthread','dl','X11'])

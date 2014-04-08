@@ -1,0 +1,11 @@
+env = Environment(CPPPATH=['/usr/local/include/hiredis'], LIBPATH=['/usr/local/lib'])
+targets = {"server" : "server.cpp"}
+linkflags = ''
+if int(ARGUMENTS.get('static', 0)):
+    linkflags = '-Wl,-static -static-libgcc'
+common_sources = []
+CommonObjects = env.Object(common_sources)
+for target, file in targets.iteritems():
+    env.Program(target = target, source = [file, CommonObjects], 
+	            LINKFLAGS=linkflags, 
+                LIBS = ['event', 'hiredis', 'pthread', 'rt'])

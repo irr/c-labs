@@ -1,0 +1,29 @@
+#libevent-2.0.so.5
+# env = Environment(CCFLAGS='-Wall -O3 -g -std=gnu99', LIBPATH=['/usr/local/lib'])
+# targets = { "http" : "http.c"}
+#linkflags = '-Wl,-rpath,/usr/local/lib'
+# if int(ARGUMENTS.get('static', 0)):
+#     linkflags = '-Wl,-static -static-libgcc'
+# common_sources = []
+# CommonObjects = env.Object(common_sources)
+# for target, file in targets.iteritems():
+#     env.Program(target = target, 
+#     			source = [file, CommonObjects], 
+#    			CPPPATH=['/usr/local/include'], 
+#    			LIBPATH=['/usr/local/lib'], 
+#     			LINKFLAGS=linkflags, 
+#     			LIBS = [ 'pthread', 'event', 'rt'])
+
+env = Environment(CCFLAGS='-Wall -O3 -g -std=gnu99')
+targets = { "http" : "http.c"}
+linkflags = ''
+if int(ARGUMENTS.get('static', 0)):
+    linkflags = '-Wl,-static -static-libgcc'
+common_sources = []
+CommonObjects = env.Object(common_sources)
+for target, file in targets.iteritems():
+    env.Program(target = target, 
+    			source = [file, CommonObjects], 
+    			LINKFLAGS=linkflags, 
+    			LIBS = [ 'pthread', 'event', 'rt'])
+env.Clean('.', '.sconsign.dblite')

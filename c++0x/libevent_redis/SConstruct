@@ -1,0 +1,13 @@
+import os
+env = Environment(ENV = os.environ, CCFLAGS='-g -std=c++0x', CPPPATH=['/usr/local/include/hiredis'], LIBPATH=['/usr/local/lib'])
+targets = {"server" : "server.cc"}
+linkflags = '-g'
+if int(ARGUMENTS.get('static', 0)):
+    linkflags = '-g -Wl,-static -static-libgcc'
+common_sources = []
+CommonObjects = env.Object(common_sources)
+for target, file in targets.iteritems():
+    env.Program(target = target, source = [file, CommonObjects], 
+	            LINKFLAGS=linkflags, 
+                LIBS = ['event', 'hiredis', 'pthread', 'rt'])
+env.Clean('.', '.sconsign.dblite')

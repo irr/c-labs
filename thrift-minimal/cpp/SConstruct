@@ -1,0 +1,9 @@
+env = Environment(CCFLAGS='-DHAVE_INTTYPES_H -DHAVE_NETINET_IN_H', CPPPATH=['/usr/local/include/thrift', '../gen-cpp'], LIBPATH=['/usr/local/lib'])
+targets = {"server" : "server.cpp" , "client" : "client.cpp"}
+linkflags = ''
+if int(ARGUMENTS.get('static', 0)):
+    linkflags = '-Wl,-static -static-libgcc'
+common_sources = ['../gen-cpp/SharedService.cpp', '../gen-cpp/shared_types.cpp', '../gen-cpp/tutorial_types.cpp', '../gen-cpp/Calculator.cpp']
+CommonObjects = env.Object(common_sources)
+for target, file in targets.iteritems():
+    env.Program(target = target, source = [file, CommonObjects], LINKFLAGS=linkflags, LIBS = ['thrift', 'pthread'])
