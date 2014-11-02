@@ -73,7 +73,8 @@ enum class UEnum : unsigned char {
 template<typename T>
 void listAll(typename std::initializer_list<T> values) {
     cout << "\t{ ";
-    for (typename std::initializer_list<T>::const_iterator it = values.begin(); it != values.end(); ++it)
+    //for (typename std::initializer_list<T>::const_iterator it = values.begin(); it != values.end(); ++it)
+    for (auto it = values.begin(); it != values.end(); ++it)
         cout << *it << " ";
     cout << "}" << endl;
 }
@@ -149,7 +150,7 @@ int main() {
     int (*add)(int,int) = sum;
     auto aadd = sum;
     cout << "\tusing [int (*add)(int,int) = sum] passing 1 and 2: " << (*add)(1,2) << endl;
-    cout << "\tusing [auto aadd = sum] passing 1 and 2: " << (**add)(1,2) << endl;
+    cout << "\tusing [auto aadd = sum] passing 1 and 2: " << aadd(1,2) << endl;
     cout << "\tusing [int isum(decltype(sum) f, int x, int y)] passing 1 and 2: " << isum(sum,1,2) << endl << endl;
 
     /*
