@@ -17,17 +17,16 @@
 
 using namespace std;
 
-inline string format(const char* fmt, ...){
+inline string format(const char* fmt, ...) {
     int size = 512;
-    char* buffer = 0;
+    char* buffer = nullptr;
     buffer = new char[size];
     va_list vl;
     va_start(vl, fmt);
     int nsize = vsnprintf(buffer, size, fmt, vl);
-    if(size<=nsize){ //fail delete buffer and try again
+    if (size <= nsize) { 
         delete[] buffer;
-        buffer = 0;
-        buffer = new char[nsize+1]; //+1 for /0
+        buffer = new char[nsize+1];
         nsize = vsnprintf(buffer, size, fmt, vl);
     }
     std::string ret(buffer);
