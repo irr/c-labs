@@ -76,10 +76,9 @@ bool toutf8(const string &file, string &charset) {
         string content;
         read_file(file, content);
         size_t dstlen = content.length() * 2;
-        const char *src = content.c_str();
         size_t srclen = content.length();
         char dst[dstlen];
-        char *pin = (char*) src;
+        char *pin = (char*) content.c_str();
         char *pout = (char*) dst;
         conv = iconv_open("UTF-8//TRANSLIT", charset.c_str());
         iconv(conv, (char **) &pin, &srclen, &pout, &dstlen);
