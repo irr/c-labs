@@ -54,9 +54,8 @@ void shell(const std::string &cmd, std::string &out) {
 void read_file(const string &file, string &content) {
     ifstream ifs(file);
     try {
-        string txt((std::istreambuf_iterator<char>(ifs)),
-                   (std::istreambuf_iterator<char>()));
-        content = txt;
+        content = string((std::istreambuf_iterator<char>(ifs)),
+                         (std::istreambuf_iterator<char>()));
     } catch (const exception& _) {
         throw;
     }
