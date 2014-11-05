@@ -188,4 +188,6 @@ int main(int argc, char **argv) {
     cout << "root: " << root << endl;
 
     inorder(root);
+
+    cout << endl;
 }
