@@ -107,4 +107,21 @@ int main(int argc, char **argv) {
 
         cout << endl << endl;
     }
+
+    unsigned int n = 19720403;
+    unsigned int x;
+
+    string s;
+
+    cout << "building string from n = " << n << " ... ";
+
+    while (n > 0) {
+        x = n % 10;
+        n = n / 10;
+        s.append(1, (char)('0'+x));
+        cout << x << " ";
+    }
+
+    std::reverse(s.begin(), s.end());
+    cout << "string: \"" << s << "\"\n\n";
 }
