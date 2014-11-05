@@ -154,7 +154,7 @@ int main(int argc, char **argv) {
     auto vc = [](unsigned int a, unsigned int b){ return a > b; };
     sort(vd.begin(), vd.end(), vc);
 
-    vector <unsigned int> vn = {1984, 3999};
+    vector <unsigned int> vn = {13, 1984, 3999};
     
     for (unsigned int n : vn) {
         cout << "\tN=" << n << endl;
