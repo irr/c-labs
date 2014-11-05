@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cassert>
 #include <iostream>
 #include <iomanip>
 #include <map>
@@ -51,6 +52,21 @@ node* insert(node *p, int k) {
     debug(p, "return p");
     cout << endl;
     return p;
+}
+
+node* search(node* p, int k) {
+    if (p == nullptr) {
+        return nullptr;
+    } else if (p->k == k) {
+        debug(p, "return p");
+        return p;
+    } else if (k < p->k) {
+        debug(p, "(k < p->k)");
+        return search(p->pl, k);
+    } else {
+        debug(p, "(k >= p->k)");
+        return search(p->pr, k);
+    }
 }
 
 void inorder(node* p) {
@@ -189,5 +205,8 @@ int main(int argc, char **argv) {
 
     inorder(root);
 
+    cout << "\nsearch: 7" << endl;
+    assert(search(root, 7) != nullptr);
+ 
     cout << endl;
 }
