@@ -80,7 +80,7 @@ void inorder(node* p) {
 
 int main(int argc, char **argv) {
 
-    vector<STRS> mystrs = { STRS("ivan ribeiro rocha", "alessandra cristina dos santos"),
+    vector<STRS> mystrs = { STRS("ivan rocha", "alessandra santos"),
                             {"babi luma lara", "babi luma lara lisa"} };
 
     for (STRS s : mystrs) {
@@ -88,7 +88,6 @@ int main(int argc, char **argv) {
         string &y = s.y;
 
         cout << "testing:\n\tx=" << x << "\n\ty=" << y;
-
         cout << "\n\n\tMAPS\n";
 
         map<char, bool> my;
@@ -105,7 +104,6 @@ int main(int argc, char **argv) {
         }
 
         cout << "\t\tres: y " << ((ok) ? "contains x" : "do not contains x") << "\n\n";
-
         cout << "\tSETS\n";
 
         auto comp = [](char a, char b){ return a < b; };
@@ -168,39 +166,29 @@ int main(int argc, char **argv) {
         for (string a : x) {
             cout << a;
         }
-
         cout << endl << endl;
     }
 
-    unsigned int n = 19720403;
-    unsigned int x;
-
-    string s;
+    unsigned int x, n = 19720403;
 
     cout << "building string from n = " << n << " ... ";
-
+    
+    string s;
     while (n > 0) {
         x = n % 10;
-        n = n / 10;
-        s.append(1, (char)('0'+x));
+        n /= 10;
+        s.append(1, (char)('0' + x));
         cout << x << " ";
     }
 
     std::reverse(s.begin(), s.end());
     cout << "string: \"" << s << "\"\n\n";
 
-    cout << "insert  5\n";
-    node* root = insert(nullptr, 5);
-
-    cout << "insert 10\n";
-    root = insert(root, 10);
-
-    cout << "insert  1\n";
-    root = insert(root, 1);
-
-    cout << "insert  7\n";
-    root = insert(root, 7);
-
+    node* root = nullptr;
+    for (int i : {5, 10, 1, 7}) {
+        cout << "insert  " << setw(2) << i << endl;
+        root = insert(root, i);
+    }
     cout << "root: " << root << endl;
 
     inorder(root);
