@@ -78,6 +78,15 @@ void inorder(node* p) {
     inorder(p->pr);
 }
 
+void destroy(node* p) {
+    if (p != nullptr) {
+        destroy(p->pl);
+        destroy(p->pr);
+        debug(p, "deleting...");
+        delete p;
+    }
+}
+
 int main(int argc, char **argv) {
 
     vector<STRS> mystrs = { STRS("ivan rocha", "alessandra santos"),
@@ -196,5 +205,8 @@ int main(int argc, char **argv) {
     cout << "\nsearch: 7" << endl;
     assert(search(root, 7) != nullptr);
  
+    cout << "\ndestroying..." << endl;
+    destroy(root);
+
     cout << endl;
 }
