@@ -74,7 +74,7 @@ void inorder(node* p) {
         return;
     }
     inorder(p->pl);
-    debug(p);
+    debug(p, "inorder");
     inorder(p->pr);
 }
 
@@ -85,6 +85,61 @@ void destroy(node* p) {
         debug(p, "deleting...");
         delete p;
     }
+}
+
+node* findmax(node* p) {
+    if (p == nullptr) {
+        return nullptr;
+    }
+    if (p->pr == nullptr) {
+        return p;
+    }
+    return findmax(p->pr);
+}
+
+node* removemax(node* p, node* pm) {
+    if (p == nullptr) {
+        return nullptr;
+    }    
+    if (p == pm) {
+        return pm->pl;
+    }
+    debug(p, "1.removemax(pm)");
+    p->pr = removemax(p->pr, pm);
+    debug(p, "2.removemax(pm)");
+    return p;
+}
+
+node* remove(node* p, int k) {
+    if (p == nullptr) {
+        return nullptr;
+    }
+    if (p->k == k) {
+        if (p->pl == nullptr) {
+            node* prs = p->pr;
+            debug(p, "(p->pl == nullptr)");
+            delete p;            
+            return prs;
+        }
+        if (p->pr == nullptr) {
+            node* pls = p->pl;
+            debug(p, "(p->pr == nullptr)");
+            delete p;
+            return pls;
+        }
+        node* pm = findmax(p->pl);
+        debug(pm, "findmax(p->pl)");
+        pm->pl = removemax(p->pl, pm);
+        pm->pr = p->pr;
+        debug(p, "removed");
+        delete p;
+        return pm;
+    } else if (k < p->k) {
+        p->pl = remove(p->pl, k);
+    } else if (k > p->k) {
+        p->pr = remove(p->pr, k);
+    }
+    return p;
 }
 
 int main(int argc, char **argv) {
@@ -194,7 +249,8 @@ int main(int argc, char **argv) {
     cout << "string: \"" << s << "\"\n\n";
 
     node* root = nullptr;
-    for (int i : {5, 10, 1, 7}) {
+    // https://www.cs.usfca.edu/~galles/visualization/BST.html
+    for (int i : {5, 10, 2, 7, 13, 1, 3, 4, 0}) {
         cout << "insert  " << setw(2) << i << endl;
         root = insert(root, i);
     }
@@ -205,6 +261,11 @@ int main(int argc, char **argv) {
     cout << "\nsearch: 7" << endl;
     assert(search(root, 7) != nullptr);
  
+    cout << "\nremoving: 5" << endl;
+    root = remove(root, 5);
+
+    inorder(root);
+
     cout << "\ndestroying..." << endl;
     destroy(root);
 
