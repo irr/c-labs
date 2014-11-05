@@ -14,6 +14,54 @@ struct STRS {
     STRS(string a, string b) : x(a), y(b) {};
 };
 
+struct node {
+    int k;
+    node *pl;
+    node *pr;
+};    
+
+void debug(node* n, const char* s = nullptr) {
+    if (s != nullptr) {
+        cout << "  [" << setw(4) << n->k << "] " << setw(24) << s << ", p: " << setw(10) << n 
+             << ", l:" << setw(10) << n->pl << ", r:" << setw(10) << n->pr << endl;    
+    } else {
+        cout << "  [" << setw(4) << n->k << "] " << "p: " << setw(10) << n 
+             << ", l:" << setw(10) << n->pl << ", r:" << setw(10) << n->pr << endl;    
+    }
+}
+node* insert(node *p, int k) {
+    if (p == nullptr) {
+        node* n = new node;
+        n->k = k;
+        n->pl = nullptr;
+        n->pr = nullptr;
+        debug(n, "return n");
+        cout << endl;
+        return n;
+    }
+    if (k < p->k) {
+        debug(p, "1.(k < p->k)");
+        p->pl = insert(p->pl, k);
+        debug(p, "2.(k < p->k)");
+    } else {
+        debug(p, "1.(k >= p->k)");
+        p->pr = insert(p->pr, k);
+        debug(p, "2.(k >= p->k)");
+    }
+    debug(p, "return p");
+    cout << endl;
+    return p;
+}
+
+void inorder(node* p) {
+    if (p == nullptr) {
+        return;
+    }
+    inorder(p->pl);
+    debug(p);
+    inorder(p->pr);
+}
+
 int main(int argc, char **argv) {
 
     vector<STRS> mystrs = { STRS("ivan ribeiro rocha", "alessandra cristina dos santos"),
@@ -124,4 +172,20 @@ int main(int argc, char **argv) {
 
     std::reverse(s.begin(), s.end());
     cout << "string: \"" << s << "\"\n\n";
+
+    cout << "insert  5\n";
+    node* root = insert(nullptr, 5);
+
+    cout << "insert 10\n";
+    root = insert(root, 10);
+
+    cout << "insert  1\n";
+    root = insert(root, 1);
+
+    cout << "insert  7\n";
+    root = insert(root, 7);
+
+    cout << "root: " << root << endl;
+
+    inorder(root);
 }
