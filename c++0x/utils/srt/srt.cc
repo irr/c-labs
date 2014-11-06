@@ -116,10 +116,11 @@ int main(int argc, char** argv) {
         if (!toutf8(file, charset)) return 1;
     }
 
+    string nothing = "";
     string content = "";
     read_file(file, content);
     regex rp("<[^>]+>");
-    content = regex_replace(content, rp, "");
+    content = regex_replace(content, rp, nothing);
     write_file(file, content);
 
     system(format("zenity --info --text='Filename: %s\\nEncoding: [%s]'", file.c_str(), charset.c_str()).c_str());
