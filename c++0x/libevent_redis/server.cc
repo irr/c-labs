@@ -36,10 +36,17 @@ void close(struct sib_config * cfg) {
 
 int main()
 {
+/*
     struct sib_config cfg = { { "127.0.0.1", 8081, 5, "application/json; charset=UTF-8" },
                               { CType::REDIS_CONN_UNIX, 5 }, 
                               { "localhost", 6379 }, 
                               { "/tmp/redis.sock" }, 
+                              { &func, &close, NULL, {} } };
+*/                              
+    struct sib_config cfg = { { "127.0.0.1", 8081, 5, "application/json; charset=UTF-8" },
+                              { CType::REDIS_CONN_TCP, 5 }, 
+                              { "localhost", 6379 }, 
+                              { "" }, 
                               { &func, &close, NULL, {} } };
 
     sib::event_loop(&cfg);

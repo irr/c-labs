@@ -1,5 +1,5 @@
 import os
-env = Environment(ENV = os.environ, CCFLAGS='-g -std=c++0x', CPPPATH=['/usr/local/include/hiredis'], LIBPATH=['/usr/local/lib'])
+env = Environment(ENV = os.environ, CCFLAGS='-g -std=c++0x', CPPPATH=['/usr/include/hiredis'], LIBPATH=['/usr/lib'])
 targets = {"server" : "server.cc"}
 linkflags = '-g'
 if int(ARGUMENTS.get('static', 0)):
