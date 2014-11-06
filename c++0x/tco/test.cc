@@ -15,6 +15,6 @@ unsigned int f(unsigned int a, unsigned int b) {
 
 int main(int argc, char **argv) {
     vector<string> args(argv, argv + argc);
-    int n = stoi(args[1]); 
+    int n = (argc < 2) ? 100000000 : stoi(args[1]);
     std::cout << f(n, n) << ": OK\n";
 }
