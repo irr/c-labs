@@ -7,12 +7,15 @@
 #include <iomanip>
 #include <iostream>
 #include <memory> 
-#include <regex>
 #include <string>
 #include <vector>
 
+#include <boost/algorithm/string.hpp>
+#include <boost/regex.hpp>
+
 #include <iconv.h>
 
+// yum install boost-static glibc-static libstdc++-static
 // valgrind --show-reachable=yes --trace-children=yes --leak-check=full ./srt <srt file>
 
 using namespace std;
@@ -94,7 +97,7 @@ bool toutf8(const string &file, string &charset) {
 }
 int main(int argc, char** argv) {
     if (argc < 2) {
-        cout << "Usage: srt <file>" << endl;
+        cout << "usage: srt <file>" << endl;
         return 1;
     }
     vector<std::string> arguments(argv, argv + argc);
@@ -103,26 +106,37 @@ int main(int argc, char** argv) {
     string cmd = format("file -bi \"%s\"", file.c_str());
     string out = "";
     shell(cmd, out);
-    if (out.length() == 0) return 1;
-    regex r("charset=(.*)");    
-    smatch m;
-    string charset = "";    
-    if (regex_search(out, m, r)) {
-        charset = m.str().substr(8);
-    }
-    if (charset.length() == 0) return 1;
-    transform(charset.begin(), charset.end(), charset.begin(), ::tolower);
-    if (charset != "utf-8") {
-        if (!toutf8(file, charset)) return 1;
+    if (out.length() == 0) {
+        cout << "could not get file encoding...\n";
+        return 1;
     }
 
-    string nothing = "";
+    boost::regex r(R"(.*charset=(.*))");
+    boost::cmatch m;
+    string charset = "";
+    if (boost::regex_match(out.c_str(), m, r)) {  
+        charset = m[1].first;
+        boost::algorithm::trim(charset);
+    } else {
+        cout << "could not get charset from [" << out << "]...\n";
+        return 1;        
+    }
+    transform(charset.begin(), charset.end(), charset.begin(), ::tolower);
+    if (charset != "utf-8") {
+        if (!toutf8(file, charset)) {
+            cout << "could not get convert from [" << charset << "] to utf-8...\n";
+            return 1;
+        }
+    }
+
     string content = "";
     read_file(file, content);
-    regex rp("<[^>]+>");
-    content = regex_replace(content, rp, nothing);
+
+    boost::regex rp("<[^>]+>");
+    content = boost::regex_replace(content, rp, "");
     write_file(file, content);
 
     system(format("zenity --info --text='Filename: %s\\nEncoding: [%s]'", file.c_str(), charset.c_str()).c_str());
+
     return 0;
 }

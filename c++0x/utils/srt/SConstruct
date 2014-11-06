@@ -1,5 +1,5 @@
 import os
-env = Environment(ENV = os.environ, CCFLAGS='-g -std=c++11', LIBPATH=['/usr/local/lib'])
+env = Environment(ENV = os.environ, CCFLAGS='-g -std=c++11', LIBPATH=['/usr/lib'])
 targets = {"srt" : "srt.cc"}
 linkflags = ''
 if int(ARGUMENTS.get('static', 0)):
@@ -7,5 +7,5 @@ if int(ARGUMENTS.get('static', 0)):
 common_sources = []
 CommonObjects = env.Object(common_sources)
 for target, file in targets.iteritems():
-    env.Program(target = target, source = [file, CommonObjects], LINKFLAGS=linkflags, LIBS = ['rt'])
+    env.Program(target = target, source = [file, CommonObjects], LINKFLAGS=linkflags, LIBS = ['boost_regex-mt', 'pthread', 'rt'])
 env.Clean('.', '.sconsign.dblite')
