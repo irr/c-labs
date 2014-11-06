@@ -1,5 +1,5 @@
 import os
-env = Environment(ENV = os.environ, CCFLAGS='-std=c++0x', CPPPATH=['/usr/local/include/hiredis'], LIBPATH=['/usr/local/lib'])
+env = Environment(ENV = os.environ, CCFLAGS='-std=c++0x', CPPPATH=['/usr/include/hiredis'], LIBPATH=['/usr/lib'])
 targets = {"server" : "server.cc"}
 linkflags = ''
 if int(ARGUMENTS.get('static', 0)):
@@ -10,3 +10,4 @@ for target, file in targets.iteritems():
     env.Program(target = target, source = [file, CommonObjects], 
 	            LINKFLAGS=linkflags, 
                 LIBS = ['event', 'hiredis', 'pthread', 'rt'])
+env.Clean('.', '.sconsign.dblite')
