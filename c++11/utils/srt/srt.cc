@@ -1,12 +1,8 @@
 #include <algorithm>
 #include <cstdlib>
-#include <cstdio>
 #include <cstdarg>
-#include <cstring>
 #include <fstream>
-#include <iomanip>
 #include <iostream>
-#include <memory> 
 #include <string>
 #include <vector>
 
