@@ -1,0 +1,11 @@
+import os
+env = Environment(ENV = os.environ, CCFLAGS='-std=c++11', LIBPATH=['/usr/local/lib'])
+targets = {"oop" : "oop.cpp"}
+linkflags = ''
+if int(ARGUMENTS.get('static', 0)):
+    linkflags = '-Wl,-static -static-libgcc'
+common_sources = ["dog.cpp", "owneddog.cpp"]
+CommonObjects = env.Object(common_sources)
+for target, file in targets.iteritems():
+    env.Program(target = target, source = [file, CommonObjects], LINKFLAGS=linkflags, LIBS = ['rt'])
+env.Clean('.', '.sconsign.dblite')
