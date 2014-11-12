@@ -5,7 +5,7 @@ c-labs
 
 ```shell
 mkdir -p ~/.vim/colors
-cp /home/irocha/vim/darknight256.vim ~/.vim/colors/
+cp ~/vim/darknight256.vim ~/.vim/colors/
 
 yum groupinstall "Development Tools"
 yum install scons cmake kernel-devel openssl-devel boost-devel boost-doc \
