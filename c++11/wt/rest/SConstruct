@@ -8,5 +8,5 @@ for target, file in targets.iteritems():
     env.Program(target = target, 
                 source = [file, CommonObjects], 
                 LINKFLAGS=linkflags, 
-                LIBS = ['wt','wtdbo','wtdbomysql','wtdbosqlite3','wthttp','wttest','boost_signals-mt','rt'])
+                LIBS = ['wt','wtdbo','wtdbomysql','wtdbosqlite3','wthttp','wttest','boost_thread-mt', 'boost_signals-mt','rt'])
 env.Clean('.', '.sconsign.dblite')
