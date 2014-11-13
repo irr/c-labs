@@ -7,5 +7,5 @@ if int(ARGUMENTS.get('static', 0)):
 common_sources = []
 CommonObjects = env.Object(common_sources)
 for target, file in targets.iteritems():
-    env.Program(target = target, source = [file, CommonObjects], LINKFLAGS=linkflags, LIBS = ['boost_regex-mt', 'pthread', 'rt'])
+    env.Program(target = target, source = [file, CommonObjects], LINKFLAGS=linkflags, LIBS = ['boost_regex', 'rt'])
 env.Clean('.', '.sconsign.dblite')
