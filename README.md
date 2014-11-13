@@ -23,7 +23,9 @@ apt-get install build-essential libboost-all-dev scons scons-doc cmake cmake-doc
                 witty witty-dbg witty-dev witty-doc libevent-dev libffi-dev \
                 libmicrohttpd-devlibreadline6-dev libpcre3-dev libssl-dev \
                 libsqlite3-dev libmysqlclient-dev \
-                libncurses5-dev libelf-dev asciidoc binutils-dev c++-annotations
+                libncurses5-dev libelf-dev asciidoc binutils-dev c++-annotations \
+                doxygen graphviz libpng12-dev libgraphicsmagick1-dev libhpdf-dev libpng12-dev \
+                libpango1.0-dev mesa-common-dev libpq-dev firebird-dev
 
 Copyright and License
 -----------
