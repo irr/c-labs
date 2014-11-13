@@ -5,7 +5,7 @@ c-labs
 
 ```shell
 mkdir -p ~/.vim/colors
-cp ~/git/c-labs/vim/darknight256.vim ~/.vim/colors/
+cp ~/git/c-labs/vim/calmar256-dark.vim ~/.vim/colors/
 
 yum groupinstall "Development Tools"
 yum install scons cmake kernel-devel openssl-devel boost-devel boost-doc \
