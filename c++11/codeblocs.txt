@@ -1,0 +1,60 @@
+Codeblocks with scons
+
+1) Create a new, empty project.
+
+        If you want to be able to compile single files you need to set the objects output directories to where the scons script places them. This is the only place that it's difficult to make scons work in codeblocks. Codeblocks can only pass <current target's obj dir>/filename.o to scons, so unless it's always true that all object files are going to be in one place, it wont work. So, if you can make this guarantee, set it accordingly. If you can't don't worry, because they can simply use 'build', as most developers do typically. 
+
+2) Right click on the project in the Projects list within the current workspace, choose Properties.
+
+        On the project settings tab, check "This is a custom makefile"
+        Enter the name of your scons script, which is most likely "SConstruct", as the name of the custom makefile.
+        On the build targets tab, for each build target set the output filename equal to the relative path and filename of the binary that will be produced by scons. This is what lets you run/debug through the IDE. 
+
+            Click OK. 
+
+3) Right click on the project in the Projects list within the current workspace, choose Build Options.
+
+4) For the top level section (project name), set all the "Make" commands to nothing; an empty line.
+
+5) Specify the appropriate make commands for each target you'll be building (debug/release)
+
+        Known variables here are limited, global variables are not able to be used.. you can only refer to: 
+
+            $make - useless to us, this will be for the selected toolchain. We will just call "scons", anyway.
+            $makefile - whatever you specified in the project properties, could be anything, really.
+            $target - the target name, most likely "Debug" or "Release"... whichever one you're configuring.
+            $file - only used to compile a single file, only known in that section afaik. 
+
+        With those variables, one can configure the project to build with scons by using a setup such as the following, which assumes the scons script is configured such that you can pass debug=1 to specify a debug build. Note that if the SConstruct file is in a different folder than the codeblocks project file (and you have to specify a directory change with -C <relative_path_to_sconstruct_file>) then when a compilation error occurs and the message from gcc with the error and line number shows up in the message list, you wont be able to double click it to jump to that file (as codeblocks expects to have a path relative to the cbp file available, and the output will be relative to the directory in which scons was called). That's why for the load testing client box programs I laid out my SConstruct files the way that I did, with the cbp in the same directory. The commands below will assume a debug build. 
+
+            Build project/target: 
+
+ scons -f $makefile debug=1
+
+            Compile single file: 
+
+ # If you have the previously discussed guarantees for compiling single files
+ scons -f $makefile debug=1 $file
+ # otherwise (the most likely case)
+ echo "ERROR: Compilation of single files is disabled, use build instead."; return 1
+
+            Clean project/target: 
+
+ scons -f $makefile debug=1 -c
+
+            Ask if rebuild is needed: 
+
+ scons -f $makefile debug=1 -q
+
+            Silent build: 
+
+ scons -f $makefile debug=1 -s
+
+            NOTE: Silent build is the build command used if full command line logging is disabled (default), if you want to see the entire output as you would get from the command line using scons, you want it to use the non-quiet build command. The proper way to do this is to go to Settings -> Compiler and debugger settings -> global compiler settings -> other settings -> compiler logging -> full command line. 
+
+6) Add all the relevant files to the project tree. Note that when you build your workspace it will only run the scons script; the presence or absence of a file in the project tree is not relevant. For a makefile project, adding files to the tree is simply a convenience. It does nothing but give you something to click on.
+
+7) Debugging will work, as long as the file was built with debugging information by your scons script, (gcc's -g flag)
+
+8) When performance build/rebuild/clean workspace, codeblocks builds the project in the order they appear in the workspace. You can move the projects around via the context menu you get from right clicking the project in the project list. Just keep this build order in mind, in the event you rely on it. 
+
