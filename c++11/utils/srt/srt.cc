@@ -83,14 +83,16 @@ bool toutf8(const string &file, string &charset) {
         iconv(conv, (char **) &pin, &srclen, &pout, &dstlen);
         iconv_close(conv);
         string out = string(dst);
-        write_file(file, out);
-        return true;
+        if (out.length() > 0) {
+            write_file(file, out);
+            return true;
+        }
     } catch (const exception& _) {
         if (conv) iconv_close(conv);
-        return false;
     }
-
+    return false;
 }
+
 int main(int argc, char** argv) {
     if (argc < 2) {
         cout << "usage: srt <file>" << endl;
