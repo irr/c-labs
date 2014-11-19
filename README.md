@@ -21,7 +21,7 @@ yum install scons cmake kernel-devel openssl-devel boost-devel boost-doc \
 apt-get install build-essential libboost-all-dev scons scons-doc cmake cmake-doc \
                 c-cpp-reference stl-manual glibc-doc valgrind \
                 witty witty-dbg witty-dev witty-doc libevent-dev libffi-dev \
-                libmicrohttpd-devlibreadline6-dev libpcre3-dev libssl-dev \
+                libmicrohttpd-dev libreadline6-dev libpcre3-dev libssl-dev \
                 libsqlite3-dev libmysqlclient-dev \
                 libncurses5-dev libelf-dev asciidoc binutils-dev c++-annotations \
                 doxygen graphviz libpng12-dev libgraphicsmagick1-dev libhpdf-dev libpng12-dev \
