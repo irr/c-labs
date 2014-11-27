@@ -1,5 +1,5 @@
 import os
-env = Environment(ENV = os.environ, CCFLAGS='-g -std=c++11', LIBPATH=['/usr/lib'])
+env = Environment(ENV = os.environ, CCFLAGS='-g -std=c++0x', LIBPATH=['/usr/lib'])
 targets = {"srt" : "srt.cc"}
 linkflags = ''
 if int(ARGUMENTS.get('static', 0)):
