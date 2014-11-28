@@ -1,0 +1,11 @@
+import os
+env = Environment(ENV = os.environ, CCFLAGS='-g -std=c++0x', LIBPATH=['/usr/lib64'])
+targets = {"hello" : "hello.c"}
+linkflags = ''
+if int(ARGUMENTS.get('static', 0)):
+    linkflags = '-Wl,-static -static-libgcc'
+common_sources = []
+CommonObjects = env.Object(common_sources)
+for target, file in targets.iteritems():
+    env.Program(target = target, source = [file, CommonObjects], LINKFLAGS=linkflags, LIBS = ['rt', 'microhttpd'])
+env.Clean('.', '.sconsign.dblite')
