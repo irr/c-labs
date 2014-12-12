@@ -5,6 +5,8 @@ static const int PF_INET = 2;
 static const int AF_INET = PF_INET;
 static const int SOCK_STREAM = 1;
 
+void bzero(void *s, size_t n);
+
 int socket(int domain, int type, int protocol);
 
 typedef uint32_t socklen_t;
@@ -56,6 +58,8 @@ local C = ffi.C
 local listenfd = C.socket(C.AF_INET, C.SOCK_STREAM, 0)
 
 local servaddr = ffi.new("struct sockaddr_in[1]")
+C.bzero(ffi.cast("struct sockaddr *", servaddr), ffi.sizeof(servaddr));
+
 servaddr[0].sin_family = C.AF_INET
 servaddr[0].sin_addr.s_addr=C.htonl(C.INADDR_ANY);
 servaddr[0].sin_port = C.htons(0);
