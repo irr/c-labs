@@ -36,8 +36,8 @@ bool stats(TCPStream tcp) {
 }
  
 int main() {
-    Sniffer eth("eth0");
-    TCPStreamFollower test = TCPStreamFollower();
-    test.follow_streams(eth, stats);
+    Sniffer sniffer("eth0");
+    TCPStreamFollower stalker = TCPStreamFollower();
+    stalker.follow_streams(sniffer, stats);
     return 1;
 } 
