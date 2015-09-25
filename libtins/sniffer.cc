@@ -14,12 +14,12 @@
 using namespace Tins;
  
 void signal_callback_handler(int signum) {
-    printf("Caught signal %02d\n", signum);
-
     if (signum == SIGINT) {
-        printf("Ctrl-C {%02d} detected. Exiting...\n", signum);
+        printf("Ctrl-C {signum=%d} detected. Exiting...\n", signum);
         exit(0);
     }
+
+    printf("Caught signal {signum=%d}\n", signum);
 }
 
 bool stats(TCPStream tcp) { 
