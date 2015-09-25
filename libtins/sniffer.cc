@@ -3,9 +3,6 @@
 
 #include <tins/tins.h>
 
-#include <tins/sniffer.h>
-#include <tins/tcp.h>
-
 #include <unistd.h>
 
 #include <csignal>
@@ -16,8 +13,6 @@
 
 using namespace Tins;
  
-std::ofstream outfile;
-
 void signal_callback_handler(int signum) {
     printf("Caught signal %02d\n", signum);
 
