@@ -26,7 +26,7 @@ bool stats(TCPStream tcp) {
     const RawPDU::payload_type& client_payload = tcp.client_payload();
     const RawPDU::payload_type& server_payload = tcp.server_payload();
 
-    auto transit = (server_payload.size() > 0) ? 
+    auto payload = (server_payload.size() > 0) ? 
                     server_payload : client_payload;
 
     TCPStream::StreamInfo info = tcp.stream_info();
@@ -34,13 +34,11 @@ bool stats(TCPStream tcp) {
             tcp.id(), 
             info.client_addr.to_string().c_str(), info.client_port,
             info.server_addr.to_string().c_str(), info.server_port,
-            client_payload.size(), server_payload.size(), transit.size(),
+            client_payload.size(), server_payload.size(), payload.size(),
             tcp.is_finished());
 
-    /*
     std::string tcpstream(payload.begin(),payload.end());
     std::cout<<tcpstream.substr(0, 40)<<std::endl;
-    */
 
     return true;
 }
