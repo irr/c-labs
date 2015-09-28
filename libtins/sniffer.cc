@@ -26,15 +26,15 @@ bool stats(TCPStream tcp) {
     const RawPDU::payload_type& client_payload = tcp.client_payload();
     const RawPDU::payload_type& server_payload = tcp.server_payload();
 
-    const RawPDU::payload_type& payload = (server_payload.size() > 0) ? 
-                                          server_payload : client_payload;
+    auto transit = (server_payload.size() > 0) ? 
+                    server_payload : client_payload;
 
     TCPStream::StreamInfo info = tcp.stream_info();
-    printf("0x%08lx,%s:%d,%s:%d,%d,%d,%d\n",
+    printf("0x%08lx,%s:%d,%s:%d,%d,%d,%d,%d\n",
             tcp.id(), 
             info.client_addr.to_string().c_str(), info.client_port,
             info.server_addr.to_string().c_str(), info.server_port,
-            client_payload.size(), server_payload.size(),
+            client_payload.size(), server_payload.size(), transit.size(),
             tcp.is_finished());
 
     /*
