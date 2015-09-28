@@ -22,6 +22,15 @@ void signal_callback_handler(int signum) {
     printf("Caught signal {signum=%d}\n", signum);
 }
 
+void dump(const std::string& s) {
+    std::string::size_type n = s.find("\r\n\r\n");
+    if (n > 0) {
+        std::cout << s.substr(0, n) << "...\n" << std::endl;
+    } else {
+        std::cout << "(HTTP payload error)" << std::endl;
+    }
+}
+
 bool stats(TCPStream tcp) { 
     const RawPDU::payload_type& client_payload = tcp.client_payload();
     const RawPDU::payload_type& server_payload = tcp.server_payload();
@@ -37,8 +46,13 @@ bool stats(TCPStream tcp) {
             client_payload.size(), server_payload.size(), payload.size(),
             tcp.is_finished());
 
-    std::string tcpstream(payload.begin(),payload.end());
-    std::cout<<tcpstream.substr(0, 40)<<std::endl;
+    std::string tcpstream(payload.begin(), payload.end());
+
+    if (tcpstream.find_first_of("HTTP/1.") >= 0) {
+        dump(tcpstream);
+    } else {
+        std::cout << "(unknown payload)" << std::endl;
+    }
 
     return true;
 }
