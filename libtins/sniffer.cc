@@ -47,7 +47,7 @@ bool stats(TCPStream tcp) {
             tcp.is_finished());
 
     const std::string tcpstream(payload.begin(), payload.end());
-    if (tcpstream.find_first_of("HTTP/1.") >= 0) {
+    if (tcpstream.find("HTTP/1.") >= 0) {
         inspect(tcp, tcpstream);
     } else {
         std::cout << "(unknown payload)" << std::endl;
