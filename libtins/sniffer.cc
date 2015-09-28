@@ -22,8 +22,8 @@ void signal_callback_handler(int signum) {
     printf("Caught signal {signum=%d}\n", signum);
 }
 
-void dump(const std::string& s) {
-    std::string::size_type n = s.find("\r\n\r\n");
+void inspect(const TCPStream& tcp, const std::string& s) {
+    const auto& n = s.find("\r\n\r\n");
     if (n > 0) {
         std::cout << s.substr(0, n) << "...\n" << std::endl;
     } else {
@@ -35,10 +35,10 @@ bool stats(TCPStream tcp) {
     const RawPDU::payload_type& client_payload = tcp.client_payload();
     const RawPDU::payload_type& server_payload = tcp.server_payload();
 
-    auto payload = (server_payload.size() > 0) ? 
-                    server_payload : client_payload;
+    const auto& payload = (server_payload.size() > 0) ? 
+                           server_payload : client_payload;
 
-    TCPStream::StreamInfo info = tcp.stream_info();
+    const TCPStream::StreamInfo& info = tcp.stream_info();
     printf("0x%08lx,%s:%d,%s:%d,%d,%d,%d,%d\n",
             tcp.id(), 
             info.client_addr.to_string().c_str(), info.client_port,
@@ -46,10 +46,9 @@ bool stats(TCPStream tcp) {
             client_payload.size(), server_payload.size(), payload.size(),
             tcp.is_finished());
 
-    std::string tcpstream(payload.begin(), payload.end());
-
+    const std::string tcpstream(payload.begin(), payload.end());
     if (tcpstream.find_first_of("HTTP/1.") >= 0) {
-        dump(tcpstream);
+        inspect(tcp, tcpstream);
     } else {
         std::cout << "(unknown payload)" << std::endl;
     }
