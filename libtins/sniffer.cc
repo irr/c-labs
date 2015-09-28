@@ -9,10 +9,49 @@
 #include <cstdlib>
 #include <cstdio>
 
+#include <iostream>
+#include <map>
 #include <string>
 
 using namespace Tins;
- 
+
+class Stream {
+    friend std::ostream &operator<<(std::ostream &, const Stream&);
+    public:
+        std::string id;
+        bool ignore;
+
+        Stream() {}
+
+        Stream(const Stream& st) {
+            id = st.id;
+            ignore = st.ignore;
+        }
+
+        ~Stream() {}
+       
+        Stream& operator=(const Stream &rhs) {
+           this->id = rhs.id;
+           this->ignore = rhs.ignore;
+           return *this;
+        }
+
+        int operator==(const Stream& rhs) const {
+            return (this->id == rhs.id);
+        }
+
+        int operator<(const Stream& rhs) const {
+            return (this->id < rhs.id);
+        }
+};
+
+std::ostream &operator<<(std::ostream &output, const Stream& st) {
+   output << st.id << ' ' << std::to_string(st.ignore) << std::endl;
+   return output;
+}
+
+std::map<const std::string, Stream> table;
+
 void signal_callback_handler(int signum) {
     if (signum == SIGINT) {
         printf("Ctrl-C {signum=%d} detected. Exiting...\n", signum);
@@ -49,6 +88,7 @@ bool stats(TCPStream tcp) {
     id.append(":");
     id.append(std::to_string(info.server_port));
 
+
     std::hash<std::string> hash_fn;
     const size_t hash = hash_fn(id);
 
@@ -58,10 +98,24 @@ bool stats(TCPStream tcp) {
             tcp.is_finished());
 
     const std::string tcpstream(payload.begin(), payload.end());
-    if (tcpstream.find("HTTP/1.") >= 0) {
+    if ((tcpstream.find("HTTP/1.") == 0) ||  
+        ((tcpstream.find("GET") == 0) && (tcpstream.find("HTTP/1.") >= 0)) ||  
+        ((tcpstream.find("POST") == 0) && (tcpstream.find("HTTP/1.") >= 0))) {
         inspect(id, hash, tcp, tcpstream);
     } else {
-        std::cout << "(unknown payload)" << std::endl;
+        std::cout << "(binary payload)" << std::endl;
+    }
+
+    if(table.find(id) == table.end()) {
+        std::cout << ">>>>>>>>>>>>> NO!" << std::endl;
+        Stream st;
+        st.id = id;
+        st.ignore = false;
+        table[id] = st;
+        std::cout << ">>>>>>>>>>>>> YES! " << st << std::endl;
+    } else {
+        Stream st = table[id];
+        std::cout << ">>>>>>>>>>>>> TABLE! " << st << std::endl;
     }
 
     return true;
