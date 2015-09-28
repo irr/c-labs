@@ -16,7 +16,7 @@
 using namespace Tins;
 
 class Stream {
-    friend std::ostream &operator<<(std::ostream &, const Stream&);
+    friend std::ostream &operator<<(std::ostream&, const Stream&);
     public:
         std::string id;
         bool ignore;
@@ -45,7 +45,7 @@ class Stream {
         }
 };
 
-std::ostream &operator<<(std::ostream &output, const Stream& st) {
+std::ostream& operator<<(std::ostream &output, const Stream& st) {
    output << st.id << ' ' << std::to_string(st.ignore) << std::endl;
    return output;
 }
