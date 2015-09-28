@@ -114,12 +114,11 @@ bool stats(TCPStream tcp) {
     }
 
     if(table.find(id) == table.end()) {
-        std::cout << ">>>>>>>>>>>>> NO!" << std::endl;
         Stream st;
         st.id = id;
         st.ignore = ignore;
         table[id] = st;
-        std::cout << ">>>>>>>>>>>>> YES! " << st << std::endl;
+        std::cout << ">>>>>>>>>>>>> ADDED! " << st << std::endl;
     } else {
         Stream st = table[id];
         std::cout << ">>>>>>>>>>>>> TABLE! " << st << std::endl;
