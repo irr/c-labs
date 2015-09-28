@@ -22,7 +22,7 @@ void signal_callback_handler(int signum) {
     printf("Caught signal {signum=%d}\n", signum);
 }
 
-void inspect(const TCPStream& tcp, const std::string& s) {
+void inspect(const std::string& id, const size_t& hash, const TCPStream& tcp, const std::string& s) {
     const auto& n = s.find("\r\n\r\n");
     if (n > 0) {
         std::cout << s.substr(0, n) << "...\n" << std::endl;
@@ -39,16 +39,27 @@ bool stats(TCPStream tcp) {
                            server_payload : client_payload;
 
     const TCPStream::StreamInfo& info = tcp.stream_info();
-    printf("0x%08lx,%s:%d,%s:%d,%d,%d,%d,%d\n",
-            tcp.id(), 
-            info.client_addr.to_string().c_str(), info.client_port,
-            info.server_addr.to_string().c_str(), info.server_port,
+
+    std::string id;
+    id.append(info.client_addr.to_string());
+    id.append(":");
+    id.append(std::to_string(info.client_port));
+    id.append("|");
+    id.append(info.server_addr.to_string());
+    id.append(":");
+    id.append(std::to_string(info.server_port));
+
+    std::hash<std::string> hash_fn;
+    const size_t hash = hash_fn(id);
+
+    printf("0x%08lx,%s{%s},%d,%d,%d,%d\n",
+            tcp.id(), id.c_str(), std::to_string(hash).c_str(),
             client_payload.size(), server_payload.size(), payload.size(),
             tcp.is_finished());
 
     const std::string tcpstream(payload.begin(), payload.end());
     if (tcpstream.find("HTTP/1.") >= 0) {
-        inspect(tcp, tcpstream);
+        inspect(id, hash, tcp, tcpstream);
     } else {
         std::cout << "(unknown payload)" << std::endl;
     }
