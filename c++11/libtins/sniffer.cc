@@ -29,7 +29,16 @@ class Stream {
         bool ignore;
         std::time_t timestamp;
 
-        Stream() {}
+        uint32_t sent;
+        uint32_t received;
+
+        Stream() {
+            this->id = "";
+            this->ignore = true;
+            this->timestamp = 0;
+            this->sent = 0;
+            this->received = 0;
+        }
 
         ~Stream() {}
 
@@ -37,12 +46,16 @@ class Stream {
             this->id = st.id;
             this->ignore = st.ignore;
             this->timestamp = st.timestamp;
+            this->sent = st.sent;
+            this->received = st.received;
         }
 
         Stream& operator=(const Stream &rhs) {
            this->id = rhs.id;
            this->ignore = rhs.ignore;
            this->timestamp = rhs.timestamp;
+           this->sent = rhs.sent;
+           this->received = rhs.received;
            return *this;
         }
 
@@ -60,7 +73,7 @@ class Stream {
 };
 
 std::ostream& operator<<(std::ostream &output, const Stream& st) {
-   output << st.id << ' ' << std::to_string(st.ignore) << std::endl;
+   output << st.id << ',' << st.sent << "," << st.received << "," << st.ignore << std::endl;
    return output;
 }
 
@@ -71,6 +84,10 @@ void signal_callback_handler(int signum) {
     if (signum == SIGINT) {
         printf("Ctrl-C {signum=%d} detected. Exiting...\n", signum);
         exit(0);
+    }
+
+    for (auto it = tracker.begin(); it != tracker.end(); ++it) {
+        std::cout << (*(*it).second) << std::endl;
     }
 
     printf("Caught signal {signum=%d}\n", signum);
@@ -85,7 +102,7 @@ void inspect(const std::string& id, const TCPStream& tcp, const std::string& s) 
     }
 }
 
-bool stats(TCPStream tcp) { 
+bool stats(const TCPStream& tcp) { 
     const RawPDU::payload_type& client_payload = tcp.client_payload();
     const RawPDU::payload_type& server_payload = tcp.server_payload();
 
@@ -135,11 +152,15 @@ bool stats(TCPStream tcp) {
         st.id = id;
         st.ignore = ignore;
         st.timestamp = std::time(nullptr);
+        st.sent = tcp.client_payload().size();
+        st.received = tcp.server_payload().size();
         sessions[id] = st;
         tracker.push_back(std::make_pair(id, &sessions[id]));
         std::cout << ">>>>>>>>>>>>> ADDED! " << st << std::endl;
     } else {
-        Stream st = sessions[id];
+        Stream& st = sessions[id];
+        st.sent += tcp.client_payload().size();
+        st.received += tcp.server_payload().size();
         if (!st.is_expired(EXPIRES)) {
             std::cout << ">>>>>>>>>>>>> TABLE! " << st << std::endl;
         }
