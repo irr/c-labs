@@ -147,14 +147,12 @@ bool stats(TCPStream tcp) {
 
     tracker.erase(std::remove_if(tracker.begin(), 
                                  tracker.end(),
-                                 [](std::pair<std::string, Stream*> item) { 
-                                       auto id = item.first;
-                                       auto st = item.second;
-                                       if (st->is_expired(EXPIRES)) {
-                                           std::cout << ">>>>>>>>>>>>> EXPIRED! " << *st << std::endl;
-                                           sessions.erase(sessions.find(id));
+                                 [](std::pair<std::string, Stream*> p) { 
+                                       if (p.second->is_expired(EXPIRES)) {
+                                           std::cout << ">>>>>>>>>>>>> EXPIRED! " << *p.second << std::endl;
+                                           sessions.erase(sessions.find(p.first));
                                        }
-                                       return st->is_expired(EXPIRES);
+                                       return p.second->is_expired(EXPIRES);
                                  }), tracker.end());
     return true;
 }
