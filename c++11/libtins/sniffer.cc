@@ -147,7 +147,7 @@ bool stats(TCPStream tcp) {
 
     tracker.erase(std::remove_if(tracker.begin(), 
                                  tracker.end(),
-                                 [](std::pair<std::string, Stream*> p) { 
+                                 [](std::pair<const std::string&, const Stream*> p) { 
                                        if (p.second->is_expired(EXPIRES)) {
                                            std::cout << ">>>>>>>>>>>>> EXPIRED! " << *p.second << std::endl;
                                            sessions.erase(sessions.find(p.first));
