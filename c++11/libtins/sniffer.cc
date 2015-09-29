@@ -12,6 +12,7 @@
 #include <cstdio>
 #include <ctime>
 
+#include <algorithm>
 #include <iostream>
 #include <map>
 #include <string>
@@ -127,7 +128,9 @@ bool stats(TCPStream tcp) {
         ignore = true;
     }
 
-    if(sessions.find(id) == sessions.end()) {
+    auto it = sessions.find(id);
+
+    if(it == sessions.end()) {
         Stream st;
         st.id = id;
         st.ignore = ignore;
@@ -138,11 +141,21 @@ bool stats(TCPStream tcp) {
     } else {
         Stream st = sessions[id];
         if (!st.is_expired(EXPIRES)) {
-            st.timestamp = std::time(nullptr);  
             std::cout << ">>>>>>>>>>>>> TABLE! " << st << std::endl;
         }
     }
 
+    tracker.erase(std::remove_if(tracker.begin(), 
+                              tracker.end(),
+                              [](std::pair<std::string, Stream*> item) { 
+                                    auto id = item.first;
+                                    auto st = item.second;
+                                    if (st->is_expired(EXPIRES)) {
+                                        std::cout << ">>>>>>>>>>>>> EXPIRED! " << *st << std::endl;
+                                        sessions.erase(sessions.find(id));
+                                    }
+                                    return st->is_expired(EXPIRES);
+                              }), tracker.end());
     return true;
 }
  
