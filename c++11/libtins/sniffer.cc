@@ -18,7 +18,7 @@
 #include <string>
 #include <vector>
 
-const std::time_t EXPIRES = 1000;
+const std::time_t EXPIRES = 60;
 
 using namespace Tins;
 
@@ -68,17 +68,29 @@ class Stream {
         }
 
         bool is_expired(const std::time_t& secs) const {
-            return this->timestamp > (std::time(nullptr) + secs);
+            return ((this->timestamp + secs) < std::time(nullptr));
         }
 };
 
 std::ostream& operator<<(std::ostream &output, const Stream& st) {
-   output << st.id << ',' << st.sent << "," << st.received << "," << st.ignore << std::endl;
+   output << st.id << ',' << st.sent << "," << st.received << "," << st.ignore << "," << st.timestamp << std::endl;
    return output;
 }
 
 std::map<const std::string, Stream> sessions;
 std::vector<std::pair<std::string, Stream*>> tracker;
+
+void gc() {
+    tracker.erase(std::remove_if(tracker.begin(), 
+                                 tracker.end(),
+                                 [](std::pair<const std::string&, const Stream*> p) { 
+                                       if (p.second->is_expired(EXPIRES)) {
+                                           std::cout << ">>>>>>>>>>>>> EXPIRED! " << *p.second << std::endl;
+                                           sessions.erase(sessions.find(p.first));
+                                       }
+                                       return p.second->is_expired(EXPIRES);
+                                 }), tracker.end());
+}
 
 void signal_callback_handler(int signum) {
     if (signum == SIGINT) {
@@ -86,9 +98,18 @@ void signal_callback_handler(int signum) {
         exit(0);
     }
 
+    gc();
+
+    std::cout << "=======================================================" << std::endl;
+
+    std::time_t now = std::time(nullptr);
+    std::cout << "dumping @" << now << std::endl;
+
     for (auto it = tracker.begin(); it != tracker.end(); ++it) {
         std::cout << (*(*it).second) << std::endl;
     }
+
+    std::cout << "=======================================================" << std::endl;
 
     printf("Caught signal {signum=%d}\n", signum);
 }
@@ -121,7 +142,7 @@ bool stats(const TCPStream& tcp) {
     id.append(std::to_string(info.server_port));
 
 
-    if(sessions.find(id) != sessions.end()) {
+    if (sessions.find(id) != sessions.end()) {
         const Stream st = sessions[id];
         if (st.ignore) {
             return true;
@@ -147,7 +168,7 @@ bool stats(const TCPStream& tcp) {
 
     auto it = sessions.find(id);
 
-    if(it == sessions.end()) {
+    if (it == sessions.end()) {
         Stream st;
         st.id = id;
         st.ignore = ignore;
@@ -166,15 +187,8 @@ bool stats(const TCPStream& tcp) {
         }
     }
 
-    tracker.erase(std::remove_if(tracker.begin(), 
-                                 tracker.end(),
-                                 [](std::pair<const std::string&, const Stream*> p) { 
-                                       if (p.second->is_expired(EXPIRES)) {
-                                           std::cout << ">>>>>>>>>>>>> EXPIRED! " << *p.second << std::endl;
-                                           sessions.erase(sessions.find(p.first));
-                                       }
-                                       return p.second->is_expired(EXPIRES);
-                                 }), tracker.end());
+    gc();
+
     return true;
 }
  
