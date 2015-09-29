@@ -22,7 +22,7 @@
 
 static std::mutex MUTEX;
 
-const std::time_t EXPIRES = 60;
+static const std::time_t EXPIRES = 60;
 
 using namespace Tins;
 
