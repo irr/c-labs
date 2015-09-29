@@ -15,8 +15,12 @@
 #include <algorithm>
 #include <iostream>
 #include <map>
+#include <mutex>
 #include <string>
+#include <thread>
 #include <vector>
+
+static std::mutex MUTEX;
 
 const std::time_t EXPIRES = 60;
 
@@ -93,6 +97,8 @@ void gc() {
 }
 
 void signal_callback_handler(int signum) {
+    std::lock_guard<std::mutex> guard(MUTEX);
+
     if (signum == SIGINT) {
         printf("Ctrl-C {signum=%d} detected. Exiting...\n", signum);
         exit(0);
@@ -124,6 +130,8 @@ void inspect(const std::string& id, const TCPStream& tcp, const std::string& s) 
 }
 
 bool stats(const TCPStream& tcp) { 
+    std::lock_guard<std::mutex> guard(MUTEX);
+
     const RawPDU::payload_type& client_payload = tcp.client_payload();
     const RawPDU::payload_type& server_payload = tcp.server_payload();
 
