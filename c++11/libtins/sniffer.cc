@@ -31,14 +31,14 @@ class Stream {
 
         Stream() {}
 
+        ~Stream() {}
+
         Stream(const Stream& st) {
             this->id = st.id;
             this->ignore = st.ignore;
             this->timestamp = st.timestamp;
         }
 
-        ~Stream() {}
-       
         Stream& operator=(const Stream &rhs) {
            this->id = rhs.id;
            this->ignore = rhs.ignore;
