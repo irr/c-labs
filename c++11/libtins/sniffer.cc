@@ -63,7 +63,7 @@ std::ostream& operator<<(std::ostream &output, const Stream& st) {
    return output;
 }
 
-std::map<const std::string, Stream> table;
+std::map<const std::string, Stream> sessions;
 std::vector<std::pair<std::string, Stream*>> tracker;
 
 void signal_callback_handler(int signum) {
@@ -103,8 +103,8 @@ bool stats(TCPStream tcp) {
     id.append(std::to_string(info.server_port));
 
 
-    if(table.find(id) != table.end()) {
-        const Stream st = table[id];
+    if(sessions.find(id) != sessions.end()) {
+        const Stream st = sessions[id];
         if (st.ignore) {
             return true;
         }
@@ -127,16 +127,16 @@ bool stats(TCPStream tcp) {
         ignore = true;
     }
 
-    if(table.find(id) == table.end()) {
+    if(sessions.find(id) == sessions.end()) {
         Stream st;
         st.id = id;
         st.ignore = ignore;
         st.timestamp = std::time(nullptr);
-        table[id] = st;
-        tracker.push_back(std::make_pair(id, &table[id]));
+        sessions[id] = st;
+        tracker.push_back(std::make_pair(id, &sessions[id]));
         std::cout << ">>>>>>>>>>>>> ADDED! " << st << std::endl;
     } else {
-        Stream st = table[id];
+        Stream st = sessions[id];
         if (!st.is_expired(EXPIRES)) {
             st.timestamp = std::time(nullptr);  
             std::cout << ">>>>>>>>>>>>> TABLE! " << st << std::endl;
