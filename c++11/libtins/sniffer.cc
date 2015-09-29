@@ -10,10 +10,14 @@
 #include <cstddef>
 #include <cstdlib>
 #include <cstdio>
+#include <ctime>
 
 #include <iostream>
 #include <map>
 #include <string>
+#include <vector>
+
+const std::time_t EXPIRES = 1000;
 
 using namespace Tins;
 
@@ -22,12 +26,14 @@ class Stream {
     public:
         std::string id;
         bool ignore;
+        std::time_t timestamp;
 
         Stream() {}
 
         Stream(const Stream& st) {
-            id = st.id;
-            ignore = st.ignore;
+            this->id = st.id;
+            this->ignore = st.ignore;
+            this->timestamp = st.timestamp;
         }
 
         ~Stream() {}
@@ -35,6 +41,7 @@ class Stream {
         Stream& operator=(const Stream &rhs) {
            this->id = rhs.id;
            this->ignore = rhs.ignore;
+           this->timestamp = rhs.timestamp;
            return *this;
         }
 
@@ -45,6 +52,10 @@ class Stream {
         int operator<(const Stream& rhs) const {
             return (this->id < rhs.id);
         }
+
+        bool is_expired(const std::time_t& secs) const {
+            return this->timestamp > (std::time(nullptr) + secs);
+        }
 };
 
 std::ostream& operator<<(std::ostream &output, const Stream& st) {
@@ -53,6 +64,7 @@ std::ostream& operator<<(std::ostream &output, const Stream& st) {
 }
 
 std::map<const std::string, Stream> table;
+std::vector<std::pair<std::string, Stream*>> tracker;
 
 void signal_callback_handler(int signum) {
     if (signum == SIGINT) {
@@ -119,11 +131,16 @@ bool stats(TCPStream tcp) {
         Stream st;
         st.id = id;
         st.ignore = ignore;
+        st.timestamp = std::time(nullptr);
         table[id] = st;
+        tracker.push_back(std::make_pair(id, &table[id]));
         std::cout << ">>>>>>>>>>>>> ADDED! " << st << std::endl;
     } else {
         Stream st = table[id];
-        std::cout << ">>>>>>>>>>>>> TABLE! " << st << std::endl;
+        if (!st.is_expired(EXPIRES)) {
+            st.timestamp = std::time(nullptr);  
+            std::cout << ">>>>>>>>>>>>> TABLE! " << st << std::endl;
+        }
     }
 
     return true;
