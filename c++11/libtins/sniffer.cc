@@ -44,7 +44,7 @@ class Stream {
             this->received = 0;
         }
 
-        ~Stream() {}
+        virtual ~Stream() {}
 
         Stream(const Stream& st) {
             this->id = st.id;
