@@ -134,9 +134,7 @@ bool ignore(const std::string& id) noexcept {
     std::lock_guard<std::mutex> guard(MUTEX);
     if (sessions.find(id) != sessions.end()) {
         const Stream st = sessions[id];
-        if (st.ignore) {
-            return true;
-        }
+        return st.ignore;
     }
     return false;
 }
