@@ -1,4 +1,5 @@
 // http://libtins.github.io
+// sudo yum install boost-devel glibc-static
 // g++ -std=c++11 -o sniffer -Wl,-static -static-libgcc sniffer.cc -L/usr/local/lib -lboost_iostreams -lrt -ltins -lpcap -lpthread
 
 #include <tins/tins.h>
