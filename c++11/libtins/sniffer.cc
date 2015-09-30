@@ -19,6 +19,7 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <utility>
 
 static std::mutex MUTEX;
 
@@ -192,7 +193,7 @@ bool stats(const TCPStream& tcp) {
             st.timestamp = std::time(nullptr);
             st.sent = tcp.client_payload().size();
             st.received = tcp.server_payload().size();
-            sessions[id] = st;
+            sessions.emplace(std::make_pair(id, st));
             tracker.push_back(std::make_pair(id, &sessions[id]));
             std::cout << ">>>>>>>>>>>>> ADDED! " << st << std::endl;
         } else {
