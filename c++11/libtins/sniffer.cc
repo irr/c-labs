@@ -211,7 +211,7 @@ bool stats(const TCPStream& tcp) noexcept {
 }
 
 void http_follower() noexcept {
-    Sniffer sniffer("eth0");
+    Sniffer sniffer("any");
     
     TCPStreamFollower stalker = TCPStreamFollower();
     stalker.follow_streams(sniffer, stats);
