@@ -5,5 +5,5 @@ linkflags = '-Wl,-static -static-libgcc'
 common_sources = []
 CommonObjects = env.Object(common_sources)
 for target, file in targets.iteritems():
-    env.Program(target = target, source = [file, CommonObjects], LINKFLAGS=linkflags, LIBS = ['pthread', 'rt', 'tins', 'pcap'])
+    env.Program(target = target, source = [file, CommonObjects], LINKFLAGS=linkflags, LIBS = ['rt', 'tins', 'pcap', 'pthread'])
 env.Clean('.', '.sconsign.dblite')

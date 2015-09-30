@@ -199,15 +199,20 @@ bool stats(const TCPStream& tcp) {
 
     return true;
 }
- 
-int main() {
-    signal(SIGINT, signal_callback_handler);
-    signal(SIGUSR1, signal_callback_handler);
 
+void http_follower() {
     Sniffer sniffer("eth0");
     
     TCPStreamFollower stalker = TCPStreamFollower();
     stalker.follow_streams(sniffer, stats);
-    
+}
+
+int main() {
+    signal(SIGINT, signal_callback_handler);
+    signal(SIGUSR1, signal_callback_handler);
+
+    std::thread http{http_follower};
+    http.join();
+
     return 1;
 } 
