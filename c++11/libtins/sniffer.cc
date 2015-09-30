@@ -9,7 +9,6 @@
 
 #include <cstddef>
 #include <cstdlib>
-#include <cstdio>
 #include <ctime>
 
 #include <algorithm>
@@ -20,6 +19,8 @@
 #include <thread>
 #include <vector>
 #include <utility>
+
+#include <boost/format.hpp>
 
 static std::mutex MUTEX;
 
@@ -101,7 +102,7 @@ void signal_callback_handler(int signum) noexcept {
     std::lock_guard<std::mutex> guard(MUTEX);
 
     if (signum == SIGINT) {
-        printf("Ctrl-C {signum=%d} detected. Exiting...\n", signum);
+        std::cout << boost::format("\nCtrl-C signal {signum=%1%}\n") % signum;
         exit(0);
     }
 
@@ -117,8 +118,7 @@ void signal_callback_handler(int signum) noexcept {
     }
 
     std::cout << "=======================================================" << std::endl;
-
-    printf("Caught signal {signum=%d}\n", signum);
+    std::cout << boost::format("Caught signal {signum=%1%}\n") % signum;
 }
 
 void inspect(const std::string& id, const TCPStream& tcp, const std::string& s) noexcept {
@@ -148,25 +148,24 @@ bool stats(const TCPStream& tcp) noexcept {
 
     const TCPStream::StreamInfo& info = tcp.stream_info();
 
-    std::string id;
-    id.append(info.client_addr.to_string());
-    id.append(":");
-    id.append(std::to_string(info.client_port));
-    id.append("|");
-    id.append(info.server_addr.to_string());
-    id.append(":");
-    id.append(std::to_string(info.server_port));
+    const std::string id = str(boost::format{"%1%:%2%|%3%:%4%"} 
+                                % info.client_addr.to_string()
+                                % info.client_port
+                                % info.server_addr.to_string()
+                                % info.server_port);
 
     if (ignore(id)) {
         std::cout << id << " (binary payload ignored)" << std::endl;
         return true;
     }
 
-    printf("0x%08lx,%s,%d,%d,%d,%d\n",
-            tcp.id(), id.c_str(), 
-            client_payload.size(), server_payload.size(), payload.size(),
-            tcp.is_finished());
-
+    const std::string lg = str(boost::format{"0x%1$08x,%2%,%3%,%4%,%5%,%6%"}
+                                % tcp.id()
+                                % id
+                                % client_payload.size()
+                                % server_payload.size()
+                                % payload.size()
+                                % tcp.is_finished());
 
     bool ignore = false;
     const std::string tcpstream(payload.begin(), payload.end());
@@ -174,6 +173,7 @@ bool stats(const TCPStream& tcp) noexcept {
         ((tcpstream.find("GET") == 0) && (tcpstream.find("HTTP/1.") >= 0)) ||  
         ((tcpstream.find("POST") == 0) && (tcpstream.find("HTTP/1.") >= 0))) {
         inspect(id, tcp, tcpstream);
+        std::cout << lg << std::endl;
     } else {
         std::cout << "(binary payload)" << std::endl;
         ignore = true;
