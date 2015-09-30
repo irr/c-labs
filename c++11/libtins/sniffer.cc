@@ -129,9 +129,18 @@ void inspect(const std::string& id, const TCPStream& tcp, const std::string& s) 
     }
 }
 
-bool stats(const TCPStream& tcp) { 
+bool ignore(const std::string& id) {
     std::lock_guard<std::mutex> guard(MUTEX);
+    if (sessions.find(id) != sessions.end()) {
+        const Stream st = sessions[id];
+        if (st.ignore) {
+            return true;
+        }
+    }
+    return false;
+}
 
+bool stats(const TCPStream& tcp) { 
     const RawPDU::payload_type& client_payload = tcp.client_payload();
     const RawPDU::payload_type& server_payload = tcp.server_payload();
 
@@ -149,12 +158,9 @@ bool stats(const TCPStream& tcp) {
     id.append(":");
     id.append(std::to_string(info.server_port));
 
-
-    if (sessions.find(id) != sessions.end()) {
-        const Stream st = sessions[id];
-        if (st.ignore) {
-            return true;
-        }
+    if (ignore(id)) {
+        std::cout << id << " (binary payload ignored)" << std::endl;
+        return true;
     }
 
     printf("0x%08lx,%s,%d,%d,%d,%d\n",
@@ -174,28 +180,32 @@ bool stats(const TCPStream& tcp) {
         ignore = true;
     }
 
-    auto it = sessions.find(id);
+    {
+        std::lock_guard<std::mutex> guard(MUTEX);
 
-    if (it == sessions.end()) {
-        Stream st;
-        st.id = id;
-        st.ignore = ignore;
-        st.timestamp = std::time(nullptr);
-        st.sent = tcp.client_payload().size();
-        st.received = tcp.server_payload().size();
-        sessions[id] = st;
-        tracker.push_back(std::make_pair(id, &sessions[id]));
-        std::cout << ">>>>>>>>>>>>> ADDED! " << st << std::endl;
-    } else {
-        Stream& st = sessions[id];
-        st.sent += tcp.client_payload().size();
-        st.received += tcp.server_payload().size();
-        if (!st.is_expired(EXPIRES)) {
-            std::cout << ">>>>>>>>>>>>> TABLE! " << st << std::endl;
+        auto it = sessions.find(id);
+
+        if (it == sessions.end()) {
+            Stream st;
+            st.id = id;
+            st.ignore = ignore;
+            st.timestamp = std::time(nullptr);
+            st.sent = tcp.client_payload().size();
+            st.received = tcp.server_payload().size();
+            sessions[id] = st;
+            tracker.push_back(std::make_pair(id, &sessions[id]));
+            std::cout << ">>>>>>>>>>>>> ADDED! " << st << std::endl;
+        } else {
+            Stream& st = sessions[id];
+            st.sent += tcp.client_payload().size();
+            st.received += tcp.server_payload().size();
+            if (!st.is_expired(EXPIRES)) {
+                std::cout << ">>>>>>>>>>>>> TABLE! " << st << std::endl;
+            }
         }
-    }
 
-    gc();
+        gc();
+    }
 
     return true;
 }
