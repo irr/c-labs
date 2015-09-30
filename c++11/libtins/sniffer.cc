@@ -111,7 +111,7 @@ void signal_callback_handler(int signum) {
     std::time_t now = std::time(nullptr);
     std::cout << "tracker contents @" << now << std::endl;
 
-    for (auto& elem : tracker) {
+    for (const auto& elem : tracker) {
         std::cout << (*elem.second) << std::endl;
     }
 
