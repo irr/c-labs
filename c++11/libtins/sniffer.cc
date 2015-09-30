@@ -115,12 +115,6 @@ void signal_callback_handler(int signum) {
         std::cout << (*elem.second) << std::endl;
     }
 
-    /*
-    for (auto it = tracker.begin(); it != tracker.end(); ++it) {
-        std::cout << (*(*it).second) << std::endl;
-    }
-    */
-
     std::cout << "=======================================================" << std::endl;
 
     printf("Caught signal {signum=%d}\n", signum);
