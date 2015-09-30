@@ -1,5 +1,5 @@
 // http://libtins.github.io
-// g++ -std=c++0x -o sniffer -Wl,-static -static-libgcc sniffer.cc -L/usr/local/lib -lpthread -lrt -ltins -lpcap
+// g++ -std=c++11 -o sniffer -Wl,-static -static-libgcc sniffer.cc -L/usr/local/lib -lboost_iostreams -lrt -ltins -lpcap -lpthread
 
 #include <tins/tins.h>
 
