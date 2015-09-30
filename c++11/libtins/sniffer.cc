@@ -85,7 +85,7 @@ std::ostream& operator<<(std::ostream &output, const Stream& st) {
 std::map<const std::string, Stream> sessions;
 std::vector<std::pair<std::string, Stream*>> tracker;
 
-void gc() {
+void gc() noexcept {
     tracker.erase(std::remove_if(tracker.begin(), 
                                  tracker.end(),
                                  [](std::pair<const std::string&, const Stream*> p) { 
@@ -97,7 +97,7 @@ void gc() {
                                  }), tracker.end());
 }
 
-void signal_callback_handler(int signum) {
+void signal_callback_handler(int signum) noexcept {
     std::lock_guard<std::mutex> guard(MUTEX);
 
     if (signum == SIGINT) {
@@ -121,7 +121,7 @@ void signal_callback_handler(int signum) {
     printf("Caught signal {signum=%d}\n", signum);
 }
 
-void inspect(const std::string& id, const TCPStream& tcp, const std::string& s) {
+void inspect(const std::string& id, const TCPStream& tcp, const std::string& s) noexcept {
     const auto& n = s.find("\r\n\r\n");
     if (n > 0) {
         std::cout << s.substr(0, n) << "...\n" << std::endl;
@@ -130,7 +130,7 @@ void inspect(const std::string& id, const TCPStream& tcp, const std::string& s) 
     }
 }
 
-bool ignore(const std::string& id) {
+bool ignore(const std::string& id) noexcept {
     std::lock_guard<std::mutex> guard(MUTEX);
     if (sessions.find(id) != sessions.end()) {
         const Stream st = sessions[id];
@@ -141,7 +141,7 @@ bool ignore(const std::string& id) {
     return false;
 }
 
-bool stats(const TCPStream& tcp) { 
+bool stats(const TCPStream& tcp) noexcept { 
     const RawPDU::payload_type& client_payload = tcp.client_payload();
     const RawPDU::payload_type& server_payload = tcp.server_payload();
 
@@ -211,7 +211,7 @@ bool stats(const TCPStream& tcp) {
     return true;
 }
 
-void http_follower() {
+void http_follower() noexcept {
     Sniffer sniffer("eth0");
     
     TCPStreamFollower stalker = TCPStreamFollower();
