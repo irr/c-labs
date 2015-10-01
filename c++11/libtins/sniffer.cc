@@ -35,8 +35,6 @@ class Stream {
         std::string id;
         std::time_t timestamp;
 
-        bool ignore;
-
         std::string::size_type client_pos;
         std::string::size_type client_size;
 
@@ -46,7 +44,6 @@ class Stream {
         Stream() {
             this->id = "";
             this->timestamp = 0;
-            this->ignore = true;
             this->client_pos = 0;
             this->client_size = 0;
             this->server_pos = 0;
@@ -58,7 +55,6 @@ class Stream {
         Stream(const Stream& st) {
             this->id = st.id;
             this->timestamp = st.timestamp;
-            this->ignore = st.ignore;
             this->client_pos = st.client_pos;
             this->client_size = st.client_size;
             this->server_pos = st.server_pos;
@@ -68,7 +64,6 @@ class Stream {
         Stream& operator=(const Stream &rhs) {
            this->id = rhs.id;
            this->timestamp = rhs.timestamp;
-           this->ignore = rhs.ignore;
            this->client_pos = rhs.client_pos;
            this->client_size = rhs.client_size;
            this->server_pos = rhs.server_pos;
@@ -172,18 +167,12 @@ bool stats(const TCPStream& tcp) noexcept {
                                 % server_payload.size()
                                 % tcp.is_finished());
 
-    if ((!st.is_empty()) && (st.ignore)) {
-        std::cout << lg << std::endl;
-        return true;
-    }
-
     const std::string client_tcpstream(client_payload.begin(), client_payload.end());
     const std::string server_tcpstream(server_payload.begin(), server_payload.end());
 
     auto client_methods = { "GET", "POST" };
     auto client_pos = std::string::npos;
 
-    bool ignore = false;
     for (auto& method : client_methods) {
         client_pos = client_tcpstream.find("GET", st.client_pos);
         if (client_pos != std::string::npos) {
@@ -196,23 +185,15 @@ bool stats(const TCPStream& tcp) noexcept {
         } 
     }
   
-    if (client_pos == std::string::npos) {
-        ignore = true;
-    }
-
-    auto server_pos = std::string::npos;
-    if (!ignore) {
-        server_pos = server_tcpstream.find("HTTP/1.", st.server_pos);
-        if (server_pos != std::string::npos) {
-           inspect(id, tcp, server_tcpstream);
-           std::cout << lg << std::endl;
-        } 
+    auto server_pos = server_tcpstream.find("HTTP/1.", st.server_pos);
+    if (server_pos != std::string::npos) {
+       inspect(id, tcp, server_tcpstream);
+       std::cout << lg << std::endl;
     } 
 
     {
         if (st.is_empty()) {
             st.id = id;
-            st.ignore = ignore;
             st.timestamp = std::time(nullptr);
             st.client_pos = tcp.client_payload().size();
             st.client_size = st.client_pos;
