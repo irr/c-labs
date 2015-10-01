@@ -201,7 +201,7 @@ bool stats(const TCPStream& tcp) noexcept {
     }
 
     auto server_pos = std::string::npos;
-    if (!st.ignore) {
+    if (!ignore) {
         server_pos = server_tcpstream.find("HTTP/1.", st.server_pos);
         if (server_pos != std::string::npos) {
            inspect(id, tcp, server_tcpstream);
