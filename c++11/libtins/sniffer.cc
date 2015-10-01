@@ -254,16 +254,14 @@ void http_follower() noexcept {
     Sniffer sniffer("eth0", Sniffer::PROMISC);
     sniffer.set_filter("tcp and port 80");
     
-    TCPStreamFollower http_stalker = TCPStreamFollower();
-    http_stalker.follow_streams(sniffer, http_cap);
+    TCPStreamFollower().follow_streams(sniffer, http_cap);
 }
 
 void mysql_follower() noexcept {
     Sniffer sniffer("lo", Sniffer::PROMISC);
     sniffer.set_filter("tcp and port 3306");
     
-    TCPStreamFollower mysql_stalker = TCPStreamFollower();
-    mysql_stalker.follow_streams(sniffer, mysql_cap);
+    TCPStreamFollower().follow_streams(sniffer, mysql_cap);
 }
 
 int main() {
