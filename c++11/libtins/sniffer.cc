@@ -251,16 +251,20 @@ bool http_cap(const TCPStream& tcp) noexcept {
 }
 
 void http_follower() noexcept {
-    Sniffer sniffer("eth0", Sniffer::PROMISC);
-    sniffer.set_filter("tcp and port 80");
-    
+    SnifferConfiguration config;
+    config.set_filter("tcp and port 80");
+    config.set_promisc_mode(true);
+
+    Sniffer sniffer("eth0", config);
     TCPStreamFollower().follow_streams(sniffer, http_cap);
 }
 
 void mysql_follower() noexcept {
-    Sniffer sniffer("lo", Sniffer::PROMISC);
-    sniffer.set_filter("tcp and port 3306");
-    
+    SnifferConfiguration config;
+    config.set_filter("tcp and port 3306");
+    config.set_promisc_mode(true);
+
+    Sniffer sniffer("lo", config);
     TCPStreamFollower().follow_streams(sniffer, mysql_cap);
 }
 
