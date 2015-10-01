@@ -222,13 +222,15 @@ bool stats(const TCPStream& tcp) noexcept {
             tracker.push_back(std::make_pair(id, &sessions[id]));
             std::cout << ">>>>>>>>>>>>> ADDED! " << st << std::endl;
         } else {
-            if (tcp.client_payload().size() != st.client_size) {
+            auto size = tcp.client_payload().size();
+            if (size != st.client_size) {
                 st.client_pos = ++client_pos;
-                st.client_size = tcp.client_payload().size();
+                st.client_size = size;
             }
-            if (tcp.server_payload().size() != st.server_size) {
+            size = tcp.server_payload().size();
+            if (size != st.server_size) {
                 st.server_pos = ++server_pos;
-                st.server_size = tcp.server_payload().size();
+                st.server_size = size;
             }
             if (!st.is_expired(EXPIRES)) {
                 std::cout << ">>>>>>>>>>>>> TABLE! " << st << std::endl;
