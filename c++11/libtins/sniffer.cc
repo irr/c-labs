@@ -273,12 +273,9 @@ int main() {
     std::vector<std::function<decltype(http_follower)>> funcs = { http_follower, mysql_follower };
     
     std::vector<std::thread> threads;
-    for (auto& f : funcs) {
-        threads.push_back(std::thread(f));
-    }
+    for (auto& f : funcs) threads.push_back(std::thread(f));
 
-    std::for_each(threads.begin(), threads.end(),
-                  std::mem_fn(&std::thread::join));
+    std::for_each(threads.begin(), threads.end(), std::mem_fn(&std::thread::join));
 
     return 1;
 } 
