@@ -37,17 +37,21 @@ class Stream {
 
         uint32_t client;
         std::string::size_type client_pos;
+        std::string::size_type client_size;
 
         uint32_t server;
         std::string::size_type server_pos;
+        std::string::size_type server_size;
 
         Stream() {
             this->id = "";
             this->timestamp = 0;
             this->client = 0;
             this->client_pos = 0;
+            this->client_size = 0;
             this->server = 0;
             this->server_pos = 0;
+            this->server_size = 0;
         }
 
         virtual ~Stream() {}
@@ -57,8 +61,10 @@ class Stream {
             this->timestamp = st.timestamp;
             this->client = st.client;
             this->client_pos = st.client_pos;
+            this->client_size = st.client_size;
             this->server = st.server;
             this->server_pos = st.server_pos;
+            this->server_size = st.server_size;
         }
 
         Stream& operator=(const Stream &rhs) {
@@ -66,8 +72,10 @@ class Stream {
            this->timestamp = rhs.timestamp;
            this->client = rhs.client;
            this->client_pos = rhs.client_pos;
+           this->client_size = rhs.client_size;
            this->server = rhs.server;
            this->server_pos = rhs.server_pos;
+           this->server_size = rhs.server_size;
            return *this;
         }
 
@@ -90,7 +98,7 @@ class Stream {
 
 std::ostream& operator<<(std::ostream &output, const Stream& st) {
    output << st.id << ',' << st.client << ",{" << st.client_pos << "}" << 
-             st.server << ",{" << st.server_pos << "}" << 
+             st.server << ",{" << st.server_pos << "}," << 
              "," << st.timestamp << std::endl;
    return output;
 }
@@ -201,16 +209,24 @@ bool stats(const TCPStream& tcp) noexcept {
             st.timestamp = std::time(nullptr);
             st.client = tcp.client_payload().size();
             st.server = tcp.server_payload().size();
-            st.client_pos += tcp.client_payload().size();
-            st.server_pos += tcp.server_payload().size();
+            st.client_pos = st.client;
+            st.client_size = st.client;
+            st.server_pos = st.server;
+            st.server_size = st.server;
             sessions.emplace(std::make_pair(id, std::move(st)));
             tracker.push_back(std::make_pair(id, &sessions[id]));
             std::cout << ">>>>>>>>>>>>> ADDED! " << st << std::endl;
         } else {
-            st.client += tcp.client_payload().size();
-            st.server += tcp.server_payload().size();
-            st.client_pos += tcp.client_payload().size();
-            st.server_pos += tcp.server_payload().size();
+            if (tcp.client_payload().size() != st.client_size) {
+                st.client += tcp.client_payload().size();
+                st.client_pos += tcp.client_payload().size();
+                st.client_size = tcp.client_payload().size();
+            }
+            if (tcp.server_payload().size() != st.server_size) {
+                st.server += tcp.server_payload().size();
+                st.server_pos += tcp.server_payload().size();
+                st.server_size = tcp.server_payload().size();
+            }
             if (!st.is_expired(EXPIRES)) {
                 std::cout << ">>>>>>>>>>>>> TABLE! " << st << std::endl;
             }
