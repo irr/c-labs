@@ -140,7 +140,33 @@ void inspect(const std::string& id, const TCPStream& tcp, const std::string& s) 
     }
 }
 
-bool stats(const TCPStream& tcp) noexcept { 
+bool mysql_cap(const TCPStream& tcp) noexcept { 
+    std::lock_guard<std::mutex> guard(MUTEX);
+
+    const RawPDU::payload_type& client_payload = tcp.client_payload();
+    const RawPDU::payload_type& server_payload = tcp.server_payload();
+
+    const TCPStream::StreamInfo& info = tcp.stream_info();
+
+    const std::string id = str(boost::format{"%1%:%2%|%3%:%4%"} 
+                                % info.client_addr.to_string()
+                                % info.client_port
+                                % info.server_addr.to_string()
+                                % info.server_port);
+
+    const std::string lg = str(boost::format{"mysql,0x%1$08x,%2%,%3%,%4%,%5%"}
+                                % tcp.id()
+                                % id
+                                % client_payload.size()
+                                % server_payload.size()
+                                % tcp.is_finished());
+    
+    std::cout << lg << std::endl;
+
+    return true;
+}
+
+bool http_cap(const TCPStream& tcp) noexcept { 
     std::lock_guard<std::mutex> guard(MUTEX);
 
     const RawPDU::payload_type& client_payload = tcp.client_payload();
@@ -160,7 +186,7 @@ bool stats(const TCPStream& tcp) noexcept {
         st = sessions[id];
     }
 
-    const std::string lg = str(boost::format{"0x%1$08x,%2%,%3%,%4%,%5%"}
+    const std::string lg = str(boost::format{"http,0x%1$08x,%2%,%3%,%4%,%5%"}
                                 % tcp.id()
                                 % id
                                 % client_payload.size()
@@ -225,18 +251,34 @@ bool stats(const TCPStream& tcp) noexcept {
 }
 
 void http_follower() noexcept {
-    Sniffer sniffer("eth0");
+    Sniffer sniffer("eth0", Sniffer::PROMISC);
+    sniffer.set_filter("tcp and port 80");
     
-    TCPStreamFollower stalker = TCPStreamFollower();
-    stalker.follow_streams(sniffer, stats);
+    TCPStreamFollower http_stalker = TCPStreamFollower();
+    http_stalker.follow_streams(sniffer, http_cap);
+}
+
+void mysql_follower() noexcept {
+    Sniffer sniffer("lo", Sniffer::PROMISC);
+    sniffer.set_filter("tcp and port 3306");
+    
+    TCPStreamFollower mysql_stalker = TCPStreamFollower();
+    mysql_stalker.follow_streams(sniffer, mysql_cap);
 }
 
 int main() {
     signal(SIGINT, signal_callback_handler);
     signal(SIGUSR1, signal_callback_handler);
 
-    std::thread http{http_follower};
-    http.join();
+    std::vector<std::function<decltype(http_follower)>> funcs = { http_follower, mysql_follower };
+    
+    std::vector<std::thread> threads;
+    for (auto& f : funcs) {
+        threads.push_back(std::thread(f));
+    }
+
+    std::for_each(threads.begin(), threads.end(),
+                  std::mem_fn(&std::thread::join));
 
     return 1;
 } 
