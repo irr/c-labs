@@ -33,36 +33,41 @@ class Stream {
     friend std::ostream &operator<<(std::ostream&, const Stream&);
     public:
         std::string id;
-        bool ignore;
         std::time_t timestamp;
 
-        uint32_t sent;
-        uint32_t received;
+        uint32_t client;
+        std::string::size_type client_pos;
+
+        uint32_t server;
+        std::string::size_type server_pos;
 
         Stream() {
             this->id = "";
-            this->ignore = true;
             this->timestamp = 0;
-            this->sent = 0;
-            this->received = 0;
+            this->client = 0;
+            this->client_pos = 0;
+            this->server = 0;
+            this->server_pos = 0;
         }
 
         virtual ~Stream() {}
 
         Stream(const Stream& st) {
             this->id = st.id;
-            this->ignore = st.ignore;
             this->timestamp = st.timestamp;
-            this->sent = st.sent;
-            this->received = st.received;
+            this->client = st.client;
+            this->client_pos = st.client_pos;
+            this->server = st.server;
+            this->server_pos = st.server_pos;
         }
 
         Stream& operator=(const Stream &rhs) {
            this->id = rhs.id;
-           this->ignore = rhs.ignore;
            this->timestamp = rhs.timestamp;
-           this->sent = rhs.sent;
-           this->received = rhs.received;
+           this->client = rhs.client;
+           this->client_pos = rhs.client_pos;
+           this->server = rhs.server;
+           this->server_pos = rhs.server_pos;
            return *this;
         }
 
@@ -74,13 +79,19 @@ class Stream {
             return (this->id < rhs.id);
         }
 
+        bool is_empty() const {
+            return (this->id == "");
+        }
+
         bool is_expired(const std::time_t& secs) const {
             return ((this->timestamp + secs) < std::time(nullptr));
         }
 };
 
 std::ostream& operator<<(std::ostream &output, const Stream& st) {
-   output << st.id << ',' << st.sent << "," << st.received << "," << st.ignore << "," << st.timestamp << std::endl;
+   output << st.id << ',' << st.client << ",{" << st.client_pos << "}" << 
+             st.server << ",{" << st.server_pos << "}" << 
+             "," << st.timestamp << std::endl;
    return output;
 }
 
@@ -131,21 +142,11 @@ void inspect(const std::string& id, const TCPStream& tcp, const std::string& s) 
     }
 }
 
-bool ignore(const std::string& id) noexcept {
-    std::lock_guard<std::mutex> guard(MUTEX);
-    if (sessions.find(id) != sessions.end()) {
-        const Stream st = sessions[id];
-        return st.ignore;
-    }
-    return false;
-}
-
 bool stats(const TCPStream& tcp) noexcept { 
+    std::lock_guard<std::mutex> guard(MUTEX);
+
     const RawPDU::payload_type& client_payload = tcp.client_payload();
     const RawPDU::payload_type& server_payload = tcp.server_payload();
-
-    const auto& payload = (server_payload.size() > 0) ? 
-                           server_payload : client_payload;
 
     const TCPStream::StreamInfo& info = tcp.stream_info();
 
@@ -155,50 +156,61 @@ bool stats(const TCPStream& tcp) noexcept {
                                 % info.server_addr.to_string()
                                 % info.server_port);
 
-    if (ignore(id)) {
-        std::cout << id << " (binary payload ignored)" << std::endl;
-        return true;
+    Stream st;
+
+    if (sessions.find(id) != sessions.end()) {
+        st = sessions[id];
     }
 
-    const std::string lg = str(boost::format{"0x%1$08x,%2%,%3%,%4%,%5%,%6%"}
+    const std::string lg = str(boost::format{"0x%1$08x,%2%,%3%,%4%,%5%,%6%,%7%"}
                                 % tcp.id()
                                 % id
                                 % client_payload.size()
+                                % st.client_pos
                                 % server_payload.size()
-                                % payload.size()
+                                % st.server_pos
                                 % tcp.is_finished());
 
-    bool ignore = false;
-    const std::string tcpstream(payload.begin(), payload.end());
-    if ((tcpstream.find("HTTP/1.") == 0) ||  
-        ((tcpstream.find("GET") == 0) && (tcpstream.find("HTTP/1.") >= 0)) ||  
-        ((tcpstream.find("POST") == 0) && (tcpstream.find("HTTP/1.") >= 0))) {
-        inspect(id, tcp, tcpstream);
-        std::cout << lg << std::endl;
-    } else {
-        std::cout << "(binary payload)" << std::endl;
-        ignore = true;
+    const std::string client_tcpstream(client_payload.begin(), client_payload.end());
+    const std::string server_tcpstream(server_payload.begin(), server_payload.end());
+
+    auto client_methods = { "GET", "POST" };
+    auto client_pos = std::string::npos;
+
+    for (auto& method : client_methods) {
+        client_pos = client_tcpstream.find("GET", st.client_pos);
+        if (client_pos != std::string::npos) {
+            client_pos = client_tcpstream.find("HTTP/1.", client_pos);
+            if (client_pos != std::string::npos) {
+                inspect(id, tcp, client_tcpstream);
+                std::cout << lg << std::endl;
+                break;
+            }
+        } 
     }
+   
+    auto server_pos = server_tcpstream.find("HTTP/1.", st.server_pos);
+    if (server_pos != std::string::npos) {
+       inspect(id, tcp, server_tcpstream);
+       std::cout << lg << std::endl;
+    } 
 
     {
-        std::lock_guard<std::mutex> guard(MUTEX);
-
-        auto it = sessions.find(id);
-
-        if (it == sessions.end()) {
-            Stream st;
+        if (st.is_empty()) {
             st.id = id;
-            st.ignore = ignore;
             st.timestamp = std::time(nullptr);
-            st.sent = tcp.client_payload().size();
-            st.received = tcp.server_payload().size();
+            st.client = tcp.client_payload().size();
+            st.server = tcp.server_payload().size();
+            st.client_pos += tcp.client_payload().size();
+            st.server_pos += tcp.server_payload().size();
             sessions.emplace(std::make_pair(id, std::move(st)));
             tracker.push_back(std::make_pair(id, &sessions[id]));
             std::cout << ">>>>>>>>>>>>> ADDED! " << st << std::endl;
         } else {
-            Stream& st = sessions[id];
-            st.sent += tcp.client_payload().size();
-            st.received += tcp.server_payload().size();
+            st.client += tcp.client_payload().size();
+            st.server += tcp.server_payload().size();
+            st.client_pos += tcp.client_payload().size();
+            st.server_pos += tcp.server_payload().size();
             if (!st.is_expired(EXPIRES)) {
                 std::cout << ">>>>>>>>>>>>> TABLE! " << st << std::endl;
             }
@@ -211,7 +223,7 @@ bool stats(const TCPStream& tcp) noexcept {
 }
 
 void http_follower() noexcept {
-    Sniffer sniffer("any");
+    Sniffer sniffer("eth0");
     
     TCPStreamFollower stalker = TCPStreamFollower();
     stalker.follow_streams(sniffer, stats);
