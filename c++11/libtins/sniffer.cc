@@ -199,7 +199,7 @@ bool http_cap(const TCPStream& tcp) noexcept {
     auto client_methods = { "GET", "POST" };
     auto client_pos = std::string::npos;
 
-    for (auto& method : client_methods) {
+    for (const auto& method : client_methods) {
         client_pos = client_tcpstream.find("GET", st.client_pos);
         if (client_pos != std::string::npos) {
             client_pos = client_tcpstream.find("HTTP/1.", client_pos);
@@ -275,7 +275,7 @@ int main() {
     std::vector<std::function<decltype(http_follower)>> funcs = { http_follower, mysql_follower };
     
     std::vector<std::thread> threads;
-    for (auto& f : funcs) threads.push_back(std::thread(f));
+    for (const auto& f : funcs) threads.push_back(std::thread(f));
 
     std::for_each(threads.begin(), threads.end(), std::mem_fn(&std::thread::join));
 
