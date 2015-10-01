@@ -219,12 +219,12 @@ bool stats(const TCPStream& tcp) noexcept {
         } else {
             if (tcp.client_payload().size() != st.client_size) {
                 st.client += tcp.client_payload().size();
-                st.client_pos += tcp.client_payload().size();
+                st.client_pos = ++client_pos;
                 st.client_size = tcp.client_payload().size();
             }
             if (tcp.server_payload().size() != st.server_size) {
                 st.server += tcp.server_payload().size();
-                st.server_pos += tcp.server_payload().size();
+                st.server_pos = ++server_pos;
                 st.server_size = tcp.server_payload().size();
             }
             if (!st.is_expired(EXPIRES)) {
