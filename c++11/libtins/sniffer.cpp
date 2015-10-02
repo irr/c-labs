@@ -143,44 +143,23 @@ void inspect(const std::string& id, const TCPCapStream& tcp, const std::string& 
     }
 }
 
-std::pair<const std::string, const std::string&> idlog(const TCPStream& tcp) {
-    const TCPCapStream::StreamInfo& info = tcp.stream_info();
-
-    const std::string id = str(boost::format{"%1%:%2%|%3%:%4%"} 
+const std::string get_id(const TCPCapStream::StreamInfo& info) {
+    return str(boost::format{"%1%:%2%|%3%:%4%"} 
                                 % info.client_addr.to_string()
                                 % info.client_port
                                 % info.server_addr.to_string()
                                 % info.server_port);
-
-    const std::string lg = str(boost::format{"http,0x%1$08x,%2%,%3%,%4%,%5%"}
-                                % tcp.id()
-                                % id
-                                % client_payload.size()
-                                % server_payload.size()
-                                % tcp.is_finished());
-
-    return std::make_pair(id, lg);
 }
 
 bool http_fin(const TCPCapStream& tcp) noexcept { 
     std::lock_guard<std::mutex> guard(MUTEX);
 
-    const RawPDU::payload_type& client_payload = tcp.client_payload();
-    const RawPDU::payload_type& server_payload = tcp.server_payload();
-
     const TCPCapStream::StreamInfo& info = tcp.stream_info();
 
-    const std::string id = str(boost::format{"%1%:%2%|%3%:%4%"} 
-                                % info.client_addr.to_string()
-                                % info.client_port
-                                % info.server_addr.to_string()
-                                % info.server_port);
-
-    const std::string lg = str(boost::format{"http,0x%1$08x,%2%,%3%,%4%,%5%"}
+    const std::string& id = get_id(info);
+    const std::string& lg = str(boost::format{"http,0x%1$08x,%2%,%3%"}
                                 % tcp.id()
                                 % id
-                                % client_payload.size()
-                                % server_payload.size()
                                 % tcp.is_finished());
 
     std::cout << "FINISHED!: " << lg << std::endl;
@@ -194,13 +173,8 @@ bool http_cap(const TCPCapStream& tcp) noexcept {
 
     const TCPCapStream::StreamInfo& info = tcp.stream_info();
 
-    const std::string id = str(boost::format{"%1%:%2%|%3%:%4%"} 
-                                % info.client_addr.to_string()
-                                % info.client_port
-                                % info.server_addr.to_string()
-                                % info.server_port);
-
-    const std::string lg = str(boost::format{"http,0x%1$08x,%2%,%3%,%4%,%5%"}
+    const std::string& id = get_id(info);
+    const std::string& lg = str(boost::format{"http,0x%1$08x,%2%,%3%,%4%,%5%"}
                                 % tcp.id()
                                 % id
                                 % client_payload.size()
