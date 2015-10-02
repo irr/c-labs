@@ -25,6 +25,8 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
+ * Modified by Ivan Ribeiro Rocha (ivan.ribeiro@gmail.com)
+ * cap method included (payload capped after callback)
  */
 
 #ifndef TINS_TCP_CAP_STREAM_H
