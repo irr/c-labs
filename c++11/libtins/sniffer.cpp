@@ -77,6 +77,14 @@ class Stream {
             return (this->id == "");
         }
 
+        void sent_bytes(const std::string::size_type& sent) {
+            this->sent += sent;
+        }
+
+        void recv_bytes(const std::string::size_type& recv) {
+            this->recv += recv;
+        }
+
         bool is_expired(const std::time_t& secs) const {
             return ((this->timestamp + secs) < std::time(nullptr));
         }
@@ -161,38 +169,30 @@ bool http_cap(const TCPCapStream& tcp) noexcept {
     const TCPCapStream::StreamInfo& info = tcp.stream_info();
 
     const std::string& id = get_id(info);
-
-    Stream st;
-   
+    
     auto it = sessions.find(id); 
     if (it != sessions.end()) {
-        st = it->second; 
-        std::cout << ">>>>>>>>>>>>> FOUND! " << st << std::endl;
-    }
-
-    if (st.is_empty()) {
+        if (!it->second.is_expired(EXPIRES)) {
+            it->second.sent_bytes(client_payload.size());
+            it->second.recv_bytes(server_payload.size());
+            std::cout << ">>>>>>>>>>>>> TABLE! " << &(it->second) << std::endl;
+        }
+    } else {
+        Stream st;
         st.id = id;
         st.timestamp = std::time(nullptr);
         st.sent = client_payload.size();
         st.recv = server_payload.size();
-        sessions.emplace(std::make_pair(id, st));
+        sessions.emplace(std::move(std::make_pair(id, st)));
         tracker.push_back(std::make_pair(id, &sessions[id]));
-        std::cout << ">>>>>>>>>>>>> ADDED! " << st << std::endl;
-    } else {
-        if (!st.is_expired(EXPIRES)) {
-            st.sent = st.sent + client_payload.size();
-            st.recv = st.recv + server_payload.size();
-            std::cout << ">>>>>>>>>>>>> TABLE! " << st << std::endl;
-        }
+        std::cout << ">>>>>>>>>>>>> ADDED! " << &sessions[id] << std::endl;
     }
 
-    const std::string& lg = str(boost::format{"http,0x%1$08x,%2%,%3%,%4%,%5%,%6%,%7%"}
+    const std::string& lg = str(boost::format{"http,0x%1$08x,%2%,%3%,%4%,%5%"}
                                 % tcp.id()
                                 % id
                                 % client_payload.size()
                                 % server_payload.size()
-                                % st.sent
-                                % st.recv
                                 % tcp.is_finished());
 
     std::cout << "CAP: " << lg << std::endl;
