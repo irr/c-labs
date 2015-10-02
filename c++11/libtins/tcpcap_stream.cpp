@@ -131,6 +131,7 @@ TCPCapStream::~TCPCapStream() {
 void TCPCapStream::free_fragments(fragments_type &frags) {
     for(fragments_type::iterator it = frags.begin(); it != frags.end(); ++it)
         delete it->second;
+    frags.clear();
 }
 
 TCPCapStream::fragments_type TCPCapStream::clone_fragments(const fragments_type &frags) {
