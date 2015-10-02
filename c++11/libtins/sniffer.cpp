@@ -143,7 +143,7 @@ void inspect(const std::string& id, const TCPCapStream& tcp, const std::string& 
     }
 }
 
-bool mysql_cap(const TCPCapStream& tcp) noexcept { 
+bool http_fin(const TCPCapStream& tcp) noexcept { 
     std::lock_guard<std::mutex> guard(MUTEX);
 
     const RawPDU::payload_type& client_payload = tcp.client_payload();
@@ -157,16 +157,14 @@ bool mysql_cap(const TCPCapStream& tcp) noexcept {
                                 % info.server_addr.to_string()
                                 % info.server_port);
 
-    const std::string lg = str(boost::format{"mysql,0x%1$08x,%2%,%3%,%4%,%5%"}
+    const std::string lg = str(boost::format{"http,0x%1$08x,%2%,%3%,%4%,%5%"}
                                 % tcp.id()
                                 % id
                                 % client_payload.size()
                                 % server_payload.size()
                                 % tcp.is_finished());
-    
-    std::cout << lg << std::endl;
 
-    return true;
+    std::cout << "FINISHED!: " << lg << std::endl;
 }
 
 bool http_cap(const TCPCapStream& tcp) noexcept { 
@@ -183,12 +181,6 @@ bool http_cap(const TCPCapStream& tcp) noexcept {
                                 % info.server_addr.to_string()
                                 % info.server_port);
 
-    Stream st;
-
-    if (sessions.find(id) != sessions.end()) {
-        st = sessions[id];
-    }
-
     const std::string lg = str(boost::format{"http,0x%1$08x,%2%,%3%,%4%,%5%"}
                                 % tcp.id()
                                 % id
@@ -196,9 +188,17 @@ bool http_cap(const TCPCapStream& tcp) noexcept {
                                 % server_payload.size()
                                 % tcp.is_finished());
 
+    std::cout << "LOG: " << lg << std::endl;
+
     const std::string client_tcpstream(client_payload.begin(), client_payload.end());
     const std::string server_tcpstream(server_payload.begin(), server_payload.end());
 
+    std::cout << "CLIENT PAYLOAD: " << client_tcpstream << std::endl;
+    std::cout << "SERVER PAYLOAD: " << server_tcpstream << std::endl;
+
+    return true;
+
+    /*
     auto client_methods = { "GET", "POST" };
     auto client_pos = std::string::npos;
 
@@ -251,6 +251,7 @@ bool http_cap(const TCPCapStream& tcp) noexcept {
     }
 
     return true;
+    */
 }
 
 void http_follower() noexcept {
@@ -259,23 +260,14 @@ void http_follower() noexcept {
     config.set_promisc_mode(true);
 
     Sniffer sniffer("eth0", config);
-    TCPCapStreamFollower().follow_streams(sniffer, http_cap);
-}
-
-void mysql_follower() noexcept {
-    SnifferConfiguration config;
-    config.set_filter("tcp and port 3306");
-    config.set_promisc_mode(true);
-
-    Sniffer sniffer("lo", config);
-    TCPCapStreamFollower().follow_streams(sniffer, mysql_cap);
+    TCPCapStreamFollower().follow_streams(sniffer, http_cap, http_fin);
 }
 
 int main() {
     signal(SIGINT, signal_callback_handler);
     signal(SIGUSR1, signal_callback_handler);
 
-    std::vector<std::function<decltype(http_follower)>> funcs = { http_follower, mysql_follower };
+    std::vector<std::function<decltype(http_follower)>> funcs = { http_follower };
     
     std::vector<std::thread> threads;
     for (const auto& f : funcs) threads.push_back(std::thread(f));

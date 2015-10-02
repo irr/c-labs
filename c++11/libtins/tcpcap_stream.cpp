@@ -242,14 +242,13 @@ bool TCPCapStream::update(IP *ip, TCP *tcp) {
 }
 
 void TCPCapStream::cap(IP *ip, TCP *tcp) {
-    std::cout << "cap! >>>>> " 
-              << info.client_addr.to_string() << ":" << info.client_port << "|"
-              << info.server_addr.to_string() << ":" << info.server_port << ",";
-
-    if(ip->src_addr() == info.client_addr && tcp->sport() == info.client_port)
-        std::cout << client_payload_.size() << std::endl;
-    else 
-        std::cout << server_payload_.size() << std::endl;
+    if(ip->src_addr() == info.client_addr && tcp->sport() == info.client_port) {
+        free_fragments(client_frags);
+        client_payload_.erase(client_payload_.begin(), client_payload_.end());
+    } else {
+        free_fragments(server_frags);
+        server_payload_.erase(server_payload_.begin(), server_payload_.end());
+    }
 }
 
 bool TCPCapStream::StreamInfo::operator<(const StreamInfo &rhs) const {
