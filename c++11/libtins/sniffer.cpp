@@ -1,6 +1,6 @@
 // http://libtins.github.io
 // sudo yum install boost-devel glibc-static
-// g++ -std=c++11 -o sniffer -Wl,-static -static-libgcc sniffer.cc -L/usr/local/lib -lboost_iostreams -lrt -ltins -lpcap -lpthread
+// g++ -std=c++11 -o sniffer -Wl,-static -static-libgcc sniffer.cpp -L/usr/local/lib -lboost_iostreams -lrt -ltins -lpcap -lpthread
 
 #include <tins/tins.h>
 
@@ -13,6 +13,7 @@
 #include <ctime>
 
 #include <algorithm>
+#include <functional>
 #include <iostream>
 #include <map>
 #include <mutex>
@@ -22,6 +23,8 @@
 #include <utility>
 
 #include <boost/format.hpp>
+
+#include "tcpcap_stream.h"
 
 static std::mutex MUTEX;
 
@@ -131,7 +134,7 @@ void signal_callback_handler(int signum) noexcept {
     std::cout << boost::format("Caught signal {signum=%1%}\n") % signum;
 }
 
-void inspect(const std::string& id, const TCPStream& tcp, const std::string& s) noexcept {
+void inspect(const std::string& id, const TCPCapStream& tcp, const std::string& s) noexcept {
     const auto& n = s.find("\r\n\r\n");
     if (n > 0) {
         std::cout << s.substr(0, n) << "...\n" << std::endl;
@@ -140,13 +143,13 @@ void inspect(const std::string& id, const TCPStream& tcp, const std::string& s) 
     }
 }
 
-bool mysql_cap(const TCPStream& tcp) noexcept { 
+bool mysql_cap(const TCPCapStream& tcp) noexcept { 
     std::lock_guard<std::mutex> guard(MUTEX);
 
     const RawPDU::payload_type& client_payload = tcp.client_payload();
     const RawPDU::payload_type& server_payload = tcp.server_payload();
 
-    const TCPStream::StreamInfo& info = tcp.stream_info();
+    const TCPCapStream::StreamInfo& info = tcp.stream_info();
 
     const std::string id = str(boost::format{"%1%:%2%|%3%:%4%"} 
                                 % info.client_addr.to_string()
@@ -166,13 +169,13 @@ bool mysql_cap(const TCPStream& tcp) noexcept {
     return true;
 }
 
-bool http_cap(const TCPStream& tcp) noexcept { 
+bool http_cap(const TCPCapStream& tcp) noexcept { 
     std::lock_guard<std::mutex> guard(MUTEX);
 
     const RawPDU::payload_type& client_payload = tcp.client_payload();
     const RawPDU::payload_type& server_payload = tcp.server_payload();
 
-    const TCPStream::StreamInfo& info = tcp.stream_info();
+    const TCPCapStream::StreamInfo& info = tcp.stream_info();
 
     const std::string id = str(boost::format{"%1%:%2%|%3%:%4%"} 
                                 % info.client_addr.to_string()
@@ -256,7 +259,7 @@ void http_follower() noexcept {
     config.set_promisc_mode(true);
 
     Sniffer sniffer("eth0", config);
-    TCPStreamFollower().follow_streams(sniffer, http_cap);
+    TCPCapStreamFollower().follow_streams(sniffer, http_cap);
 }
 
 void mysql_follower() noexcept {
@@ -265,7 +268,7 @@ void mysql_follower() noexcept {
     config.set_promisc_mode(true);
 
     Sniffer sniffer("lo", config);
-    TCPStreamFollower().follow_streams(sniffer, mysql_cap);
+    TCPCapStreamFollower().follow_streams(sniffer, mysql_cap);
 }
 
 int main() {
