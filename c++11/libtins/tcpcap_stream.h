@@ -179,6 +179,7 @@ public:
      * any of the stored payloads.
      */
     bool update(IP *ip, TCP *tcp);
+    void cap(IP *ip, TCP *tcp);
 private:
     typedef std::map<uint32_t, RawPDU*> fragments_type;
     
@@ -370,8 +371,10 @@ bool TCPCapStreamFollower::callback(PDU &pdu, const DataFunctor &data_fun, const
         }
     }
     
-    if(it->second.update(ip, tcp))
+    if(it->second.update(ip, tcp)) {
         data_fun(it->second);
+        it->second.cap(ip, tcp);
+    }
 
     // We're done with this stream
     if(it->second.is_finished()) {

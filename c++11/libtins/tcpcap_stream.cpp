@@ -158,16 +158,6 @@ void TCPCapStream::safe_insert(fragments_type &frags, uint32_t seq, RawPDU *raw)
 bool TCPCapStream::generic_process(uint32_t &my_seq, uint32_t &other_seq, 
   payload_type &pload, fragments_type &frags, TCP *tcp) 
 {
-    /*
-    const uint32_t max = 65535;
-    if (pload.size() > max) {
-        uint32_t diff = pload.size() - max;
-        std::cout << "shrink: " << diff << "1=" << pload.size() << std::endl;
-        free_fragments(frags);
-        pload.erase(pload.begin(), pload.begin() + diff);
-        std::cout << "shrink: " << diff << "2=" << pload.size() << std::endl;
-    }
-    */
     bool added_some(false);
     if(tcp->get_flag(TCP::FIN) || tcp->get_flag(TCP::RST))
         fin_sent = true;
@@ -249,6 +239,17 @@ bool TCPCapStream::update(IP *ip, TCP *tcp) {
             return generic_process(server_seq, client_seq, server_payload_, server_frags, tcp);
         }
     }
+}
+
+void TCPCapStream::cap(IP *ip, TCP *tcp) {
+    std::cout << "cap! >>>>> " 
+              << info.client_addr.to_string() << ":" << info.client_port << "|"
+              << info.server_addr.to_string() << ":" << info.server_port << ",";
+
+    if(ip->src_addr() == info.client_addr && tcp->sport() == info.client_port)
+        std::cout << client_payload_.size() << std::endl;
+    else 
+        std::cout << server_payload_.size() << std::endl;
 }
 
 bool TCPCapStream::StreamInfo::operator<(const StreamInfo &rhs) const {
