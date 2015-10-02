@@ -28,7 +28,7 @@
 
 static std::mutex MUTEX;
 
-static const std::time_t EXPIRES = 3600;
+static const std::time_t EXPIRES = 60;
 
 using namespace Tins;
 
@@ -98,7 +98,7 @@ std::ostream& operator<<(std::ostream &output, const Stream& st) {
 std::map<const std::string, Stream> sessions;
 std::vector<std::pair<std::string, Stream*>> tracker;
 
-void gc() noexcept {
+void gc() {
     tracker.erase(std::remove_if(tracker.begin(), 
                                  tracker.end(),
                                  [](std::pair<const std::string&, const Stream*> p) { 
@@ -110,7 +110,7 @@ void gc() noexcept {
                                  }), tracker.end());
 }
 
-void signal_callback_handler(int signum) noexcept {
+void signal_callback_handler(int signum) {
     std::lock_guard<std::mutex> guard(MUTEX);
 
     if (signum == SIGINT) {
@@ -141,7 +141,7 @@ const std::string get_id(const TCPCapStream::StreamInfo& info) {
                                 % info.server_port);
 }
 
-bool http_fin(const TCPCapStream& tcp) noexcept { 
+bool http_fin(const TCPCapStream& tcp) { 
     std::lock_guard<std::mutex> guard(MUTEX);
 
     const TCPCapStream::StreamInfo& info = tcp.stream_info();
@@ -160,7 +160,7 @@ bool http_fin(const TCPCapStream& tcp) noexcept {
     std::cout << "FIN: " << lg << std::endl;
 }
 
-bool http_cap(const TCPCapStream& tcp) noexcept { 
+bool http_cap(const TCPCapStream& tcp) { 
     std::lock_guard<std::mutex> guard(MUTEX);
 
     const RawPDU::payload_type& client_payload = tcp.client_payload();
@@ -183,7 +183,7 @@ bool http_cap(const TCPCapStream& tcp) noexcept {
         st.timestamp = std::time(nullptr);
         st.sent = client_payload.size();
         st.recv = server_payload.size();
-        sessions.emplace(std::move(std::make_pair(id, st)));
+        sessions.emplace(std::make_pair(id, st));
         tracker.push_back(std::make_pair(id, &sessions[id]));
         std::cout << ">>>>>>>>>>>>> ADDED! " << &sessions[id] << std::endl;
     }
@@ -202,7 +202,7 @@ bool http_cap(const TCPCapStream& tcp) noexcept {
     return true;
 }
 
-void http_follower() noexcept {
+void http_follower() {
     SnifferConfiguration config;
     config.set_filter("tcp and port 80");
     config.set_promisc_mode(true);
