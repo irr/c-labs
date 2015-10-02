@@ -28,7 +28,7 @@
 
 static std::mutex MUTEX;
 
-static const std::time_t EXPIRES = 60;
+static const std::time_t EXPIRES = 3600;
 
 using namespace Tins;
 
@@ -38,19 +38,14 @@ class Stream {
         std::string id;
         std::time_t timestamp;
 
-        std::string::size_type client_pos;
-        std::string::size_type client_size;
-
-        std::string::size_type server_pos;
-        std::string::size_type server_size;
+        std::string::size_type sent;
+        std::string::size_type recv;
 
         Stream() {
             this->id = "";
             this->timestamp = 0;
-            this->client_pos = 0;
-            this->client_size = 0;
-            this->server_pos = 0;
-            this->server_size = 0;
+            this->sent = 0;
+            this->recv = 0;
         }
 
         virtual ~Stream() {}
@@ -58,19 +53,15 @@ class Stream {
         Stream(const Stream& st) {
             this->id = st.id;
             this->timestamp = st.timestamp;
-            this->client_pos = st.client_pos;
-            this->client_size = st.client_size;
-            this->server_pos = st.server_pos;
-            this->server_size = st.server_size;
+            this->sent = st.sent;
+            this->recv = st.recv;
         }
 
-        Stream& operator=(const Stream &rhs) {
+        Stream& operator=(const Stream& rhs) {
            this->id = rhs.id;
            this->timestamp = rhs.timestamp;
-           this->client_pos = rhs.client_pos;
-           this->client_size = rhs.client_size;
-           this->server_pos = rhs.server_pos;
-           this->server_size = rhs.server_size;
+           this->sent = rhs.sent;
+           this->recv = rhs.recv;
            return *this;
         }
 
@@ -92,7 +83,7 @@ class Stream {
 };
 
 std::ostream& operator<<(std::ostream &output, const Stream& st) {
-   output << st.id << ',' << st.client_size << "," << st.server_size << "," << st.timestamp << std::endl;
+   output << st.id << ',' << st.sent << "," << st.recv << "," << st.timestamp << std::endl;
    return output;
 }
 
@@ -134,15 +125,6 @@ void signal_callback_handler(int signum) noexcept {
     std::cout << boost::format("Caught signal {signum=%1%}\n") % signum;
 }
 
-void inspect(const std::string& id, const TCPCapStream& tcp, const std::string& s) noexcept {
-    const auto& n = s.find("\r\n\r\n");
-    if (n > 0) {
-        std::cout << s.substr(0, n) << "...\n" << std::endl;
-    } else {
-        std::cout << "(HTTP payload error)" << std::endl;
-    }
-}
-
 const std::string get_id(const TCPCapStream::StreamInfo& info) {
     return str(boost::format{"%1%:%2%|%3%:%4%"} 
                                 % info.client_addr.to_string()
@@ -157,12 +139,17 @@ bool http_fin(const TCPCapStream& tcp) noexcept {
     const TCPCapStream::StreamInfo& info = tcp.stream_info();
 
     const std::string& id = get_id(info);
-    const std::string& lg = str(boost::format{"http,0x%1$08x,%2%,%3%"}
+
+    auto it = sessions.find(id); 
+
+    const std::string& lg = str(boost::format{"http,0x%1$08x,%2%,%3%,%4%,%5%"}
                                 % tcp.id()
                                 % id
+                                % it->second.sent
+                                % it->second.recv
                                 % tcp.is_finished());
 
-    std::cout << "FINISHED!: " << lg << std::endl;
+    std::cout << "FIN: " << lg << std::endl;
 }
 
 bool http_cap(const TCPCapStream& tcp) noexcept { 
@@ -174,77 +161,45 @@ bool http_cap(const TCPCapStream& tcp) noexcept {
     const TCPCapStream::StreamInfo& info = tcp.stream_info();
 
     const std::string& id = get_id(info);
-    const std::string& lg = str(boost::format{"http,0x%1$08x,%2%,%3%,%4%,%5%"}
+
+    Stream st;
+   
+    auto it = sessions.find(id); 
+    if (it != sessions.end()) {
+        st = it->second; 
+        std::cout << ">>>>>>>>>>>>> FOUND! " << st << std::endl;
+    }
+
+    if (st.is_empty()) {
+        st.id = id;
+        st.timestamp = std::time(nullptr);
+        st.sent = client_payload.size();
+        st.recv = server_payload.size();
+        sessions.emplace(std::make_pair(id, st));
+        tracker.push_back(std::make_pair(id, &sessions[id]));
+        std::cout << ">>>>>>>>>>>>> ADDED! " << st << std::endl;
+    } else {
+        if (!st.is_expired(EXPIRES)) {
+            st.sent = st.sent + client_payload.size();
+            st.recv = st.recv + server_payload.size();
+            std::cout << ">>>>>>>>>>>>> TABLE! " << st << std::endl;
+        }
+    }
+
+    const std::string& lg = str(boost::format{"http,0x%1$08x,%2%,%3%,%4%,%5%,%6%,%7%"}
                                 % tcp.id()
                                 % id
                                 % client_payload.size()
                                 % server_payload.size()
+                                % st.sent
+                                % st.recv
                                 % tcp.is_finished());
 
-    std::cout << "LOG: " << lg << std::endl;
+    std::cout << "CAP: " << lg << std::endl;
 
-    const std::string client_tcpstream(client_payload.begin(), client_payload.end());
-    const std::string server_tcpstream(server_payload.begin(), server_payload.end());
-
-    std::cout << "CLIENT PAYLOAD: " << client_tcpstream << std::endl;
-    std::cout << "SERVER PAYLOAD: " << server_tcpstream << std::endl;
+    gc();
 
     return true;
-
-    /*
-    auto client_methods = { "GET", "POST" };
-    auto client_pos = std::string::npos;
-
-    for (const auto& method : client_methods) {
-        client_pos = client_tcpstream.find("GET", st.client_pos);
-        if (client_pos != std::string::npos) {
-            client_pos = client_tcpstream.find("HTTP/1.", client_pos);
-            if (client_pos != std::string::npos) {
-                inspect(id, tcp, client_tcpstream);
-                std::cout << lg << std::endl;
-                break;
-            }
-        } 
-    }
-  
-    auto server_pos = server_tcpstream.find("HTTP/1.", st.server_pos);
-    if (server_pos != std::string::npos) {
-       inspect(id, tcp, server_tcpstream);
-       std::cout << lg << std::endl;
-    } 
-
-    {
-        if (st.is_empty()) {
-            st.id = id;
-            st.timestamp = std::time(nullptr);
-            st.client_pos = tcp.client_payload().size();
-            st.client_size = st.client_pos;
-            st.server_pos = tcp.server_payload().size();
-            st.server_size = st.server_pos;
-            sessions.emplace(std::make_pair(id, std::move(st)));
-            tracker.push_back(std::make_pair(id, &sessions[id]));
-            std::cout << ">>>>>>>>>>>>> ADDED! " << st << std::endl;
-        } else {
-            auto size = tcp.client_payload().size();
-            if (size != st.client_size) {
-                st.client_pos = ++client_pos;
-                st.client_size = size;
-            }
-            size = tcp.server_payload().size();
-            if (size != st.server_size) {
-                st.server_pos = ++server_pos;
-                st.server_size = size;
-            }
-            if (!st.is_expired(EXPIRES)) {
-                std::cout << ">>>>>>>>>>>>> TABLE! " << st << std::endl;
-            }
-        }
-
-        gc();
-    }
-
-    return true;
-    */
 }
 
 void http_follower() noexcept {
