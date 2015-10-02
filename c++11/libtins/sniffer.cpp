@@ -73,18 +73,6 @@ class Stream {
             return (this->id < rhs.id);
         }
 
-        bool is_empty() const {
-            return (this->id == "");
-        }
-
-        void sent_bytes(const std::string::size_type& sent) {
-            this->sent += sent;
-        }
-
-        void recv_bytes(const std::string::size_type& recv) {
-            this->recv += recv;
-        }
-
         bool is_expired(const std::time_t& secs) const {
             return ((this->timestamp + secs) < std::time(nullptr));
         }
@@ -103,7 +91,7 @@ void gc() {
                                  tracker.end(),
                                  [](std::pair<const std::string&, const Stream*> p) { 
                                        if (p.second->is_expired(EXPIRES)) {
-                                           std::cout << ">>>>>>>>>>>>> EXPIRED! " << *p.second << std::endl;
+                                           std::cout << "EXPIRED! " << *p.second << std::endl;
                                            sessions.erase(sessions.find(p.first));
                                        }
                                        return p.second->is_expired(EXPIRES);
@@ -150,12 +138,14 @@ bool http_fin(const TCPCapStream& tcp) {
 
     auto it = sessions.find(id); 
 
-    const std::string& lg = str(boost::format{"http,0x%1$08x,%2%,%3%,%4%,%5%"}
+    const std::string& lg = str(boost::format{"http,0x%1$08x,%2%,%3%,%4%,%5%,%6%,%7%"}
                                 % tcp.id()
                                 % id
                                 % it->second.sent
                                 % it->second.recv
-                                % tcp.is_finished());
+                                % tcp.is_finished()
+                                % it->second.timestamp
+                                % std::time(nullptr));
 
     std::cout << "FIN: " << lg << std::endl;
 }
@@ -173,9 +163,8 @@ bool http_cap(const TCPCapStream& tcp) {
     auto it = sessions.find(id); 
     if (it != sessions.end()) {
         if (!it->second.is_expired(EXPIRES)) {
-            it->second.sent_bytes(client_payload.size());
-            it->second.recv_bytes(server_payload.size());
-            std::cout << ">>>>>>>>>>>>> TABLE! " << &(it->second) << std::endl;
+            it->second.sent += client_payload.size();
+            it->second.recv += server_payload.size();
         }
     } else {
         Stream st;
@@ -185,7 +174,6 @@ bool http_cap(const TCPCapStream& tcp) {
         st.recv = server_payload.size();
         sessions.emplace(std::make_pair(id, st));
         tracker.push_back(std::make_pair(id, &sessions[id]));
-        std::cout << ">>>>>>>>>>>>> ADDED! " << &sessions[id] << std::endl;
     }
 
     const std::string& lg = str(boost::format{"http,0x%1$08x,%2%,%3%,%4%,%5%"}
