@@ -192,10 +192,10 @@ bool http_cap(const TCPCapStream& tcp) {
 
 void http_follower() {
     SnifferConfiguration config;
-    config.set_filter("tcp and port 80");
+    config.set_filter("tcp");
     config.set_promisc_mode(true);
 
-    Sniffer sniffer("eth0", config);
+    Sniffer sniffer("any", config);
     TCPCapStreamFollower().follow_streams(sniffer, http_cap, http_fin);
 }
 
