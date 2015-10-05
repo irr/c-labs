@@ -24,7 +24,7 @@
 
 #include <boost/format.hpp>
 
-#include "tcpcap_stream.h"
+#include "tcpcap_stream.hpp"
 
 static std::mutex MUTEX;
 

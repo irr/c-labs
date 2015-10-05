@@ -31,7 +31,7 @@
 
 #include <limits>
 #include <tins/rawpdu.h>
-#include "tcpcap_stream.h"
+#include "tcpcap_stream.hpp"
 
 namespace Tins {
 
