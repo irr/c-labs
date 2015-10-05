@@ -211,10 +211,8 @@ bool http_cap(const TCPCapStream& tcp) {
         }
     }
    
-    if (!skip) { 
-        if (!http_inspect(server_tcpstream, "HTTP/", lg)) {
-            std::cout << "BIN: " << lg << std::endl;
-        }
+    if ((!skip) && (!http_inspect(server_tcpstream, "HTTP/", lg))) {
+       std::cout << "BIN: " << lg << std::endl;
     }
 
     gc();
