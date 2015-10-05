@@ -36,16 +36,15 @@ class Stream {
     friend std::ostream &operator<<(std::ostream&, const Stream&);
     public:
         std::string id;
-        std::time_t timestamp;
-
+        timespec timestamp;
         std::string::size_type sent;
         std::string::size_type recv;
 
         Stream() {
             this->id = "";
-            this->timestamp = 0;
             this->sent = 0;
             this->recv = 0;
+            clock_gettime(CLOCK_REALTIME, &this->timestamp);
         }
 
         virtual ~Stream() {}
@@ -74,12 +73,27 @@ class Stream {
         }
 
         bool is_expired(const std::time_t& secs) const {
-            return ((this->timestamp + secs) < std::time(nullptr));
+            timespec ts;
+            clock_gettime(CLOCK_REALTIME, &ts);
+            return ((this->timestamp.tv_sec + secs) < ts.tv_sec);
         }
 };
 
+const std::string fmt_time(const timespec& ts) {
+    unsigned long long ns = ts.tv_sec * 1000000000 + ts.tv_nsec;
+    long double secs = (ns / (long double) 1000000000.0);
+    const std::string f = (boost::format("%%%d.%df") % 16 % 8).str();
+    return str(boost::format(f) % secs);
+}
+
+unsigned long long diff_time(const timespec& ns_start, const timespec& ns_end) {
+    unsigned long long ns1 = ns_start.tv_sec * 1000000000 + ns_start.tv_nsec;
+    unsigned long long ns2 = ns_end.tv_sec * 1000000000 + ns_end.tv_nsec;
+    return (ns2 - ns1);
+}
+
 std::ostream& operator<<(std::ostream &output, const Stream& st) {
-   output << st.id << ',' << st.sent << "," << st.recv << "," << st.timestamp << std::endl;
+   output << st.id << ',' << st.sent << "," << st.recv << "," << fmt_time(st.timestamp) << std::endl;
    return output;
 }
 
@@ -139,14 +153,17 @@ bool http_fin(const TCPCapStream& tcp) {
     auto it = sessions.find(id); 
 
     if (it != sessions.end()) {
-        const std::string& lg = str(boost::format{"http,0x%1$08x,%2%,%3%,%4%,%5%,%6%,%7%"}
+        timespec ts;
+        clock_gettime(CLOCK_REALTIME, &ts);
+        const std::string& lg = str(boost::format{"http,0x%1$08x,%2%,%3%,%4%,%5%,%6%,%7%,%8%"}
                                     % tcp.id()
                                     % id
                                     % it->second.sent
                                     % it->second.recv
                                     % tcp.is_finished()
-                                    % it->second.timestamp
-                                    % std::time(nullptr));
+                                    % fmt_time(it->second.timestamp).c_str()
+                                    % fmt_time(ts).c_str()
+                                    % diff_time(it->second.timestamp, ts));
         std::cout << "FIN: " << lg << std::endl;
     }
 }
@@ -185,7 +202,6 @@ bool http_cap(const TCPCapStream& tcp) {
     } else {
         Stream st;
         st.id = id;
-        st.timestamp = std::time(nullptr);
         st.sent = client_payload.size();
         st.recv = server_payload.size();
         sessions.emplace(std::make_pair(id, st));
