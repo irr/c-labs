@@ -183,7 +183,28 @@ bool http_cap(const TCPCapStream& tcp) {
                                 % server_payload.size()
                                 % tcp.is_finished());
 
-    std::cout << "CAP: " << lg << std::endl;
+    const std::string client_tcpstream(client_payload.begin(), client_payload.end());
+    const std::string server_tcpstream(server_payload.begin(), server_payload.end());
+
+    std::vector<std::string> methods = { "GET ", "POST ", "HEAD ", "OPTIONS " };
+    for (const auto& method : methods) {
+        if (client_tcpstream.length() > 0) {
+            std::size_t found = client_tcpstream.find(method);
+            if (found != std::string::npos) {
+                std::cout << "CAP: " << lg << std::endl;
+                std::cout << client_tcpstream.substr(found, std::string::npos) << std::endl;
+                break;
+            }
+        }
+    }
+
+    if (server_tcpstream.length() > 0) {
+        std::size_t found = server_tcpstream.find("HTTP/");
+        if (found != std::string::npos) {
+            std::cout << "CAP: " << lg << std::endl;
+            std::cout << server_tcpstream.substr(found, std::string::npos) << std::endl;
+        }
+    }
 
     gc();
 
@@ -192,7 +213,7 @@ bool http_cap(const TCPCapStream& tcp) {
 
 void http_follower() {
     SnifferConfiguration config;
-    config.set_filter("tcp");
+    config.set_filter("tcp and port 80");
     config.set_promisc_mode(true);
 
     Sniffer sniffer("any", config);
@@ -207,6 +228,8 @@ int main() {
     
     std::vector<std::thread> threads;
     for (const auto& f : funcs) threads.push_back(std::thread(f));
+
+    std::cout << "sniffer started..." << std::endl;
 
     std::for_each(threads.begin(), threads.end(), std::mem_fn(&std::thread::join));
 
