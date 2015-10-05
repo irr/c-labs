@@ -80,9 +80,10 @@ class Stream {
 };
 
 const std::string fmt_time_secs(const timespec& ts) {
+    const int n = 8;
     unsigned long long ns = ts.tv_sec * 1000000000 + ts.tv_nsec;
     long double secs = (ns / (long double) 1000000000.0);
-    const std::string f = (boost::format("%%%d.%df") % 16 % 8).str();
+    const std::string f = (boost::format("%%%d.%df") % (n << 1) % n).str();
     return str(boost::format(f) % secs);
 }
 
