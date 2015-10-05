@@ -79,21 +79,21 @@ class Stream {
         }
 };
 
-const std::string fmt_time(const timespec& ts) {
+const std::string fmt_time_secs(const timespec& ts) {
     unsigned long long ns = ts.tv_sec * 1000000000 + ts.tv_nsec;
     long double secs = (ns / (long double) 1000000000.0);
     const std::string f = (boost::format("%%%d.%df") % 16 % 8).str();
     return str(boost::format(f) % secs);
 }
 
-unsigned long long diff_time(const timespec& ns_start, const timespec& ns_end) {
+unsigned long long diff_time_ns(const timespec& ns_start, const timespec& ns_end) {
     unsigned long long ns1 = ns_start.tv_sec * 1000000000 + ns_start.tv_nsec;
     unsigned long long ns2 = ns_end.tv_sec * 1000000000 + ns_end.tv_nsec;
     return (ns2 - ns1);
 }
 
 std::ostream& operator<<(std::ostream &output, const Stream& st) {
-   output << st.id << ',' << st.sent << "," << st.recv << "," << fmt_time(st.timestamp) << std::endl;
+   output << st.id << ',' << st.sent << "," << st.recv << "," << fmt_time_secs(st.timestamp) << std::endl;
    return output;
 }
 
@@ -161,9 +161,9 @@ bool http_fin(const TCPCapStream& tcp) {
                                     % it->second.sent
                                     % it->second.recv
                                     % tcp.is_finished()
-                                    % fmt_time(it->second.timestamp).c_str()
-                                    % fmt_time(ts).c_str()
-                                    % diff_time(it->second.timestamp, ts));
+                                    % fmt_time_secs(it->second.timestamp).c_str()
+                                    % fmt_time_secs(ts).c_str()
+                                    % diff_time_ns(it->second.timestamp, ts));
         std::cout << "FIN: " << lg << std::endl;
     }
 }
