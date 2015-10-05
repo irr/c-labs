@@ -150,6 +150,18 @@ bool http_fin(const TCPCapStream& tcp) {
     std::cout << "FIN: " << lg << std::endl;
 }
 
+bool inspect(const std::string& payload, const std::string& mark, const std::string& lg){
+    if (payload.length() > 0) {
+        std::size_t found = payload.find(mark);
+        if (found != std::string::npos) {
+            std::cout << "CAP: " << lg << std::endl;
+            std::cout << payload.substr(found, std::string::npos) << std::endl;
+            return true;
+        }
+    }
+    return false;
+}
+
 bool http_cap(const TCPCapStream& tcp) { 
     std::lock_guard<std::mutex> guard(MUTEX);
 
@@ -188,23 +200,10 @@ bool http_cap(const TCPCapStream& tcp) {
 
     std::vector<std::string> methods = { "GET ", "POST ", "HEAD ", "OPTIONS " };
     for (const auto& method : methods) {
-        if (client_tcpstream.length() > 0) {
-            std::size_t found = client_tcpstream.find(method);
-            if (found != std::string::npos) {
-                std::cout << "CAP: " << lg << std::endl;
-                std::cout << client_tcpstream.substr(found, std::string::npos) << std::endl;
-                break;
-            }
-        }
+        if (inspect(client_tcpstream, method, lg) break;
     }
-
-    if (server_tcpstream.length() > 0) {
-        std::size_t found = server_tcpstream.find("HTTP/");
-        if (found != std::string::npos) {
-            std::cout << "CAP: " << lg << std::endl;
-            std::cout << server_tcpstream.substr(found, std::string::npos) << std::endl;
-        }
-    }
+    
+    inspect(server_tcpstream, "HTTP/", lg);
 
     gc();
 
