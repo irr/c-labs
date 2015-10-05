@@ -150,12 +150,15 @@ bool http_fin(const TCPCapStream& tcp) {
     std::cout << "FIN: " << lg << std::endl;
 }
 
-bool inspect(const std::string& payload, const std::string& mark, const std::string& lg){
+bool http_inspect(const std::string& payload, const std::string& mark, const std::string& lg){
     if (payload.length() > 0) {
         std::size_t found = payload.find(mark);
         if (found != std::string::npos) {
             std::cout << "CAP: " << lg << std::endl;
-            std::cout << payload.substr(found, std::string::npos) << std::endl;
+            std::size_t limit = payload.find("\r\n\r\n", found);
+            if (limit != std::string::npos) {
+                std::cout << payload.substr(found, limit) << std::endl;
+            }
             return true;
         }
     }
@@ -198,12 +201,21 @@ bool http_cap(const TCPCapStream& tcp) {
     const std::string client_tcpstream(client_payload.begin(), client_payload.end());
     const std::string server_tcpstream(server_payload.begin(), server_payload.end());
 
-    std::vector<std::string> methods = { "GET ", "POST ", "HEAD ", "OPTIONS " };
+    bool skip = false;
+
+    std::vector<std::string> methods = { "GET ", "POST ", "PUT ", "DELETE ", "HEAD ", "OPTIONS " };
     for (const auto& method : methods) {
-        if (inspect(client_tcpstream, method, lg)) break;
+        if (http_inspect(client_tcpstream, method, lg)) {
+            skip = true;
+            break;
+        }
     }
-    
-    inspect(server_tcpstream, "HTTP/", lg);
+   
+    if (!skip) { 
+        if (!http_inspect(server_tcpstream, "HTTP/", lg)) {
+            std::cout << "BIN: " << lg << std::endl;
+        }
+    }
 
     gc();
 
