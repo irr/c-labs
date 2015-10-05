@@ -138,16 +138,17 @@ bool http_fin(const TCPCapStream& tcp) {
 
     auto it = sessions.find(id); 
 
-    const std::string& lg = str(boost::format{"http,0x%1$08x,%2%,%3%,%4%,%5%,%6%,%7%"}
-                                % tcp.id()
-                                % id
-                                % it->second.sent
-                                % it->second.recv
-                                % tcp.is_finished()
-                                % it->second.timestamp
-                                % std::time(nullptr));
-
-    std::cout << "FIN: " << lg << std::endl;
+    if (it != sessions.end()) {
+        const std::string& lg = str(boost::format{"http,0x%1$08x,%2%,%3%,%4%,%5%,%6%,%7%"}
+                                    % tcp.id()
+                                    % id
+                                    % it->second.sent
+                                    % it->second.recv
+                                    % tcp.is_finished()
+                                    % it->second.timestamp
+                                    % std::time(nullptr));
+        std::cout << "FIN: " << lg << std::endl;
+    }
 }
 
 bool http_inspect(const std::string& payload, const std::string& mark, const std::string& lg){
