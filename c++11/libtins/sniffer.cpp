@@ -200,7 +200,7 @@ bool http_cap(const TCPCapStream& tcp) {
 
     std::vector<std::string> methods = { "GET ", "POST ", "HEAD ", "OPTIONS " };
     for (const auto& method : methods) {
-        if (inspect(client_tcpstream, method, lg) break;
+        if (inspect(client_tcpstream, method, lg)) break;
     }
     
     inspect(server_tcpstream, "HTTP/", lg);
