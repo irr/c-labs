@@ -92,6 +92,12 @@ unsigned long long diff_time_ns(const timespec& ns_start, const timespec& ns_end
     return (ns2 - ns1);
 }
 
+unsigned long long diff_time_now_ns(const timespec& ns_start) {
+    timespec now;
+    clock_gettime(CLOCK_REALTIME, &now);
+    return diff_time_ns(ns_start, now);
+}
+
 std::ostream& operator<<(std::ostream &output, const Stream& st) {
    output << st.id << ',' << st.sent << "," << st.recv << "," << fmt_time_secs(st.timestamp) << std::endl;
    return output;
