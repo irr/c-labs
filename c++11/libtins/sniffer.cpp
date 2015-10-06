@@ -80,23 +80,21 @@ class Stream {
         }
 };
 
-const std::string fmt_time_secs(const timespec& ts, const int& n = 8) {
-    if (n < 8) {
-        throw std::invalid_argument("n must be >= 8");
-    }
+const std::string fmt_time_secs(const timespec& ts) noexcept  {
+    const int n = 8;
     unsigned long long ns = ts.tv_sec * 1000000000 + ts.tv_nsec;
     long double secs = (ns / (long double) 1000000000.0);
     const std::string f = (boost::format("%%%d.%df") % (n << 1) % n).str();
     return str(boost::format(f) % secs);
 }
 
-unsigned long long diff_time_ns(const timespec& ns_start, const timespec& ns_end) {
+unsigned long long diff_time_ns(const timespec& ns_start, const timespec& ns_end) noexcept {
     unsigned long long ns1 = ns_start.tv_sec * 1000000000 + ns_start.tv_nsec;
     unsigned long long ns2 = ns_end.tv_sec * 1000000000 + ns_end.tv_nsec;
     return (ns2 - ns1);
 }
 
-unsigned long long diff_time_now_ns(const timespec& ns_start) {
+unsigned long long diff_time_now_ns(const timespec& ns_start) noexcept {
     timespec now;
     clock_gettime(CLOCK_REALTIME, &now);
     return diff_time_ns(ns_start, now);
@@ -137,9 +135,9 @@ void signal_callback_handler(int signum) {
     std::time_t now = std::time(nullptr);
     std::cout << "tracker contents @" << now << std::endl;
 
-    for (const auto& elem : tracker) {
-        std::cout << (*elem.second) << std::endl;
-    }
+    std::for_each(tracker.begin(), tracker.end(), 
+                  [](const std::pair<std::string, Stream*>& elem) {
+                    std::cout << (*elem.second) << std::endl; });
 
     std::cout << "=======================================================" << std::endl;
     std::cout << boost::format("Caught signal {signum=%1%}\n") % signum;
