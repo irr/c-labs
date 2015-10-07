@@ -10,6 +10,7 @@
 
 #include <cstddef>
 #include <cstdlib>
+#include <cstdint>
 #include <ctime>
 
 #include <algorithm>
@@ -31,6 +32,8 @@ static std::mutex MUTEX;
 
 static const std::time_t SECS_TO_EXPIRE = 120;
 static const double      SECS_TO_GC = 60;
+
+enum class Flow : std::int8_t {CLIENT = 1, SERVER = 2};
 
 using namespace Tins;
 
@@ -109,7 +112,8 @@ long double diff_time_ms(const timespec& ns_start, const timespec& ns_end) noexc
 
 std::ostream& operator<<(std::ostream &output, const Stream& st) {
    output << st.id << ',' << st.sent << "," << st.recv << "," 
-          << fmt_time_secs(st.initial) << ":" << fmt_time_secs(st.last) << std::endl;
+          << fmt_time_secs(st.initial) << "," << fmt_time_secs(st.last) << ":"
+          << diff_time_ms(st.initial, st.last) << std::endl;
    return output;
 }
 
@@ -119,8 +123,6 @@ std::vector<std::pair<std::string, Stream*>> tracker;
 void gc() {
     static std::time_t last = std::time(nullptr);
     std::time_t now = std::time(nullptr);
-
-    std::cout << "DIFF: " << last << ", " << std::difftime(now, last) << std::endl;
 
     if (std::difftime(now, last) > SECS_TO_GC) {
         tracker.erase(std::remove_if(tracker.begin(), 
@@ -195,16 +197,24 @@ bool http_fin(const TCPCapStream& tcp) {
     }
 }
 
-bool http_inspect(const std::string& payload, const std::string& mark, const std::string& lg){
+bool http_inspect(Stream* pst, const Flow& flow, const std::string& payload, 
+                  const std::string& mark, const std::string& lg){
     if (payload.length() > 0) {
         std::size_t found = payload.find(mark);
         if (found != std::string::npos) {
             std::cout << "CAP: " << lg << std::endl;
             std::size_t limit = payload.find("\r\n\r\n", found);
             if (limit != std::string::npos) {
-                std::cout << payload.substr(found, limit) << std::endl;
+                const std::string& data = payload.substr(found, limit);
+                std::cout << data << std::endl;
+                switch (flow) {
+                    case Flow::CLIENT:
+                        break;
+                    case Flow::SERVER:
+                        break;
+                }
+                return true;
             }
-            return true;
         }
     }
     return false;
@@ -219,21 +229,25 @@ bool http_cap(const TCPCapStream& tcp) {
     const TCPCapStream::StreamInfo& info = tcp.stream_info();
 
     const std::string& id = get_id(info);
-    
+   
+    Stream* pst;
+    Stream st;
+
     auto it = sessions.find(id); 
     if (it != sessions.end()) {
+        pst = &it->second;
         if (!it->second.is_expired(SECS_TO_EXPIRE)) {
             it->second.sent += client_payload.size();
             it->second.recv += server_payload.size();
             it->second.touch();
         }
     } else {
-        Stream st;
         st.id = id;
         st.sent = client_payload.size();
         st.recv = server_payload.size();
         sessions.emplace(std::make_pair(id, st));
         tracker.push_back(std::make_pair(id, &sessions[id]));
+        pst = &st;
     }
 
     const std::string& lg = str(boost::format{"http,0x%1$08x,%2%,%3%,%4%,%5%"}
@@ -250,13 +264,13 @@ bool http_cap(const TCPCapStream& tcp) {
 
     std::vector<std::string> methods = { "GET ", "POST ", "PUT ", "DELETE ", "HEAD ", "OPTIONS " };
     for (const auto& method : methods) {
-        if (http_inspect(client_tcpstream, method, lg)) {
+        if (http_inspect(pst, Flow::CLIENT, client_tcpstream, method, lg)) {
             skip = true;
             break;
         }
     }
    
-    if ((!skip) && (!http_inspect(server_tcpstream, "HTTP/", lg))) {
+    if ((!skip) && (!http_inspect(pst, Flow::SERVER, server_tcpstream, "HTTP/", lg))) {
        std::cout << "BIN: " << lg << std::endl;
     }
 
