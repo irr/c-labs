@@ -37,7 +37,8 @@ class Stream {
     friend std::ostream &operator<<(std::ostream&, const Stream&);
     public:
         std::string id;
-        timespec timestamp;
+        timespec initial;
+        timespec last;
         std::string::size_type sent;
         std::string::size_type recv;
 
@@ -45,21 +46,24 @@ class Stream {
             this->id = "";
             this->sent = 0;
             this->recv = 0;
-            clock_gettime(CLOCK_REALTIME, &this->timestamp);
+            clock_gettime(CLOCK_REALTIME, &this->initial);
+            clock_gettime(CLOCK_REALTIME, &this->last);
         }
 
         virtual ~Stream() {}
 
         Stream(const Stream& st) {
             this->id = st.id;
-            this->timestamp = st.timestamp;
+            this->initial = st.initial;
+            this->last = st.last;
             this->sent = st.sent;
             this->recv = st.recv;
         }
 
         Stream& operator=(const Stream& rhs) {
            this->id = rhs.id;
-           this->timestamp = rhs.timestamp;
+           this->initial = rhs.initial;
+           this->last = rhs.last;
            this->sent = rhs.sent;
            this->recv = rhs.recv;
            return *this;
@@ -73,10 +77,14 @@ class Stream {
             return (this->id < rhs.id);
         }
 
+        void touch() {
+            clock_gettime(CLOCK_REALTIME, &this->last);
+        }
+
         bool is_expired(const std::time_t& secs) const {
             timespec ts;
             clock_gettime(CLOCK_REALTIME, &ts);
-            return ((this->timestamp.tv_sec + secs) < ts.tv_sec);
+            return ((this->initial.tv_sec + secs) < ts.tv_sec);
         }
 };
 
@@ -94,14 +102,13 @@ unsigned long long diff_time_ns(const timespec& ns_start, const timespec& ns_end
     return (ns2 - ns1);
 }
 
-unsigned long long diff_time_now_ns(const timespec& ns_start) noexcept {
-    timespec now;
-    clock_gettime(CLOCK_REALTIME, &now);
-    return diff_time_ns(ns_start, now);
+long double diff_time_ms(const timespec& ns_start, const timespec& ns_end) noexcept {
+    return ((long double) diff_time_ns(ns_start, ns_end) / 1000000);
 }
 
 std::ostream& operator<<(std::ostream &output, const Stream& st) {
-   output << st.id << ',' << st.sent << "," << st.recv << "," << fmt_time_secs(st.timestamp) << std::endl;
+   output << st.id << ',' << st.sent << "," << st.recv << "," 
+          << fmt_time_secs(st.initial) << ":" << fmt_time_secs(st.last) << std::endl;
    return output;
 }
 
@@ -161,17 +168,15 @@ bool http_fin(const TCPCapStream& tcp) {
     auto it = sessions.find(id); 
 
     if (it != sessions.end()) {
-        timespec ts;
-        clock_gettime(CLOCK_REALTIME, &ts);
-        const std::string& lg = str(boost::format{"http,0x%1$08x,%2%,%3%,%4%,%5%,%6%,%7%,%8%"}
+        const std::string& lg = str(boost::format{"http,0x%1$08x,%2%,%3%,%4%,%5%,%6%,%7%:%8%"}
                                     % tcp.id()
                                     % id
                                     % it->second.sent
                                     % it->second.recv
                                     % tcp.is_finished()
-                                    % fmt_time_secs(it->second.timestamp).c_str()
-                                    % fmt_time_secs(ts).c_str()
-                                    % diff_time_ns(it->second.timestamp, ts));
+                                    % fmt_time_secs(it->second.initial).c_str()
+                                    % fmt_time_secs(it->second.last).c_str()
+                                    % diff_time_ms(it->second.initial, it->second.last));
         std::cout << "FIN: " << lg << std::endl;
     }
 }
@@ -206,6 +211,7 @@ bool http_cap(const TCPCapStream& tcp) {
         if (!it->second.is_expired(EXPIRES)) {
             it->second.sent += client_payload.size();
             it->second.recv += server_payload.size();
+            it->second.touch();
         }
     } else {
         Stream st;
