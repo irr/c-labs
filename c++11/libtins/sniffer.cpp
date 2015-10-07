@@ -29,7 +29,8 @@
 
 static std::mutex MUTEX;
 
-static const std::time_t EXPIRES = 60;
+static const std::time_t SECS_TO_EXPIRE = 120;
+static const double      SECS_TO_GC = 60;
 
 using namespace Tins;
 
@@ -116,15 +117,28 @@ std::map<const std::string, Stream> sessions;
 std::vector<std::pair<std::string, Stream*>> tracker;
 
 void gc() {
-    tracker.erase(std::remove_if(tracker.begin(), 
-                                 tracker.end(),
-                                 [](std::pair<const std::string&, const Stream*> p) { 
-                                       if (p.second->is_expired(EXPIRES)) {
-                                           std::cout << "EXPIRED! " << *p.second << std::endl;
-                                           sessions.erase(sessions.find(p.first));
-                                       }
-                                       return p.second->is_expired(EXPIRES);
-                                 }), tracker.end());
+    static std::time_t last = std::time(nullptr);
+    std::time_t now = std::time(nullptr);
+
+    std::cout << "DIFF: " << last << ", " << std::difftime(now, last) << std::endl;
+
+    if (std::difftime(now, last) > SECS_TO_GC) {
+        tracker.erase(std::remove_if(tracker.begin(), 
+                                     tracker.end(),
+                                     [](std::pair<const std::string&, const Stream*> p) { 
+                                           auto expired = p.second->is_expired(SECS_TO_EXPIRE);
+                                           if (expired) {
+                                               auto it = sessions.find(p.first);
+                                               if (it != sessions.end()) {
+                                                   auto stime = diff_time_ms(it->second.initial, it->second.last);
+                                                   std::cout << "STAT:" << *p.second << ":" << stime << std::endl;
+                                                   sessions.erase(it);
+                                               }
+                                           }
+                                           return expired;
+                                     }), tracker.end());
+        last = std::time(nullptr);
+    }
 }
 
 void signal_callback_handler(int signum) {
@@ -208,7 +222,7 @@ bool http_cap(const TCPCapStream& tcp) {
     
     auto it = sessions.find(id); 
     if (it != sessions.end()) {
-        if (!it->second.is_expired(EXPIRES)) {
+        if (!it->second.is_expired(SECS_TO_EXPIRE)) {
             it->second.sent += client_payload.size();
             it->second.recv += server_payload.size();
             it->second.touch();
