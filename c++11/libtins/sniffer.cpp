@@ -30,8 +30,8 @@
 
 static std::mutex MUTEX;
 
-static const std::time_t SECS_TO_EXPIRE = 120;
-static const double      SECS_TO_GC = 60;
+static const std::time_t SECS_TO_EXPIRE = 5;
+static const double      SECS_TO_GC = 10;
 
 enum class Flow : std::int8_t {CLIENT = 1, SERVER = 2};
 
@@ -118,27 +118,22 @@ std::ostream& operator<<(std::ostream &output, const Stream& st) {
 }
 
 std::map<const std::string, Stream> sessions;
-std::vector<std::pair<std::string, Stream*>> tracker;
 
 void gc() {
     static std::time_t last = std::time(nullptr);
     std::time_t now = std::time(nullptr);
 
     if (std::difftime(now, last) > SECS_TO_GC) {
-        tracker.erase(std::remove_if(tracker.begin(), 
-                                     tracker.end(),
-                                     [](std::pair<const std::string&, const Stream*> p) { 
-                                           auto expired = p.second->is_expired(SECS_TO_EXPIRE);
-                                           if (expired) {
-                                               auto it = sessions.find(p.first);
-                                               if (it != sessions.end()) {
-                                                   auto stime = diff_time_ms(it->second.initial, it->second.last);
-                                                   std::cout << "STAT:" << *p.second << ":" << stime << std::endl;
-                                                   sessions.erase(it);
-                                               }
-                                           }
-                                           return expired;
-                                     }), tracker.end());
+        for(auto it = sessions.begin(), ite = sessions.end(); it != ite;) {
+            if (it->second.is_expired(SECS_TO_EXPIRE)) {
+                auto stime = diff_time_ms(it->second.initial, it->second.last);
+                std::cout << "STAT:" << it->second << ":" << stime << std::endl;
+                it = sessions.erase(it);
+            }
+            else {
+                ++it;
+            }
+        }
         last = std::time(nullptr);
     }
 }
@@ -156,11 +151,11 @@ void signal_callback_handler(int signum) {
     std::cout << "=======================================================" << std::endl;
 
     std::time_t now = std::time(nullptr);
-    std::cout << "tracker contents @" << now << std::endl;
+    std::cout << "sessions @" << now << std::endl;
 
-    std::for_each(tracker.begin(), tracker.end(), 
-                  [](const std::pair<std::string, Stream*>& elem) {
-                    std::cout << (*elem.second) << std::endl; });
+    std::for_each(sessions.begin(), sessions.end(), 
+                  [](const std::pair<std::string, Stream>& elem) {
+                    std::cout << elem.second << std::endl; });
 
     std::cout << "=======================================================" << std::endl;
     std::cout << boost::format("Caught signal {signum=%1%}\n") % signum;
@@ -246,7 +241,6 @@ bool http_cap(const TCPCapStream& tcp) {
         st.sent = client_payload.size();
         st.recv = server_payload.size();
         sessions.emplace(std::make_pair(id, st));
-        tracker.push_back(std::make_pair(id, &sessions[id]));
         pst = &st;
     }
 
