@@ -160,7 +160,7 @@ std::ostream& operator<<(std::ostream &output, const Stream& st) {
    output << st.id << ",[" << st.data << "]," << STATES.at(static_cast<std::int8_t>(st.state)) << "," 
           << st.sent << "," << st.recv << "," 
           << fmt_time_secs(st.initial) << "," << fmt_time_secs(st.last) << ":"
-          << diff_time_ms(st.initial, st.last) << std::endl;
+          << diff_time_ms(st.initial, st.last);
    return output;
 }
 
@@ -194,22 +194,36 @@ void signal_callback_handler(int signum) {
 
     gc();
 
-    std::cout << "=======================================================" << std::endl;
-
-    std::time_t now = std::time(nullptr);
-    std::cout << "sessions @" << now << std::endl;
+    std::vector<std::string> tab;
+    std::string::size_type n = 0;
 
     std::for_each(sessions.begin(), sessions.end(), 
-                  [](const std::pair<std::string, Stream>& elem) {
-                        std::cout << elem.second << std::endl; 
+                  [&tab, &n](const std::pair<std::string, Stream>& elem) {
+                        std::stringstream line;
+                        line << elem.second;
+                        const std::string s = line.str();
+                        if (s.length() > n) n = s.length();
+                        tab.push_back(s);
                     });
 
     std::for_each(Stream::stats.begin(), Stream::stats.end(), 
-                  [](const Stream& st) {
-                        std::cout << st << std::endl; 
+                  [&tab, &n](const Stream& st) {
+                        std::stringstream line;
+                        line << st;
+                        const std::string s = line.str();
+                        if (s.length() > n) n = s.length();
+                        tab.push_back(s);
                     });
 
-    std::cout << "=======================================================" << std::endl;
+    const std::string f = (boost::format("| %%-%ds |\n") % n).str();
+    n += 4;
+    std::cout << std::string(n, '-') << std::endl;
+    std::for_each(tab.begin(), tab.end(), 
+                  [&f](const std::string& line) {
+                       std::cout << boost::format(f) % line;
+                    });
+    std::cout << std::string(n, '-') << std::endl;
+
     std::cout << boost::format("Caught signal {signum=%1%}\n") % signum;
 }
 
