@@ -33,7 +33,7 @@ static std::mutex MUTEX;
 static const std::time_t SECS_TO_EXPIRE = 120;
 static const double      SECS_TO_GC = 60;
 
-enum class Flow : std::int8_t {CLIENT = 1, SERVER = 2};
+enum class Flow : std::int8_t {UNKNOWN = 0, CLIENT = 1, SERVER = 2};
 
 const std::string fmt_time_secs(const timespec& ts) noexcept  {
     const int n = 8;
@@ -65,12 +65,14 @@ class Stream {
         timespec last;
         std::string::size_type sent;
         std::string::size_type recv;
+        Flow state;
 
         Stream() {
             this->id = "";
             this->data = "";
             this->sent = 0;
             this->recv = 0;
+            this->state = Flow::UNKNOWN;
             clock_gettime(CLOCK_REALTIME, &this->initial);
             clock_gettime(CLOCK_REALTIME, &this->last);
         }
@@ -84,6 +86,7 @@ class Stream {
             this->last = st.last;
             this->sent = st.sent;
             this->recv = st.recv;
+            this->state = st.state;
         }
 
         Stream& operator=(const Stream& rhs) {
@@ -93,6 +96,7 @@ class Stream {
            this->last = rhs.last;
            this->sent = rhs.sent;
            this->recv = rhs.recv;
+           this->state = rhs.state;
            return *this;
         }
 
@@ -108,7 +112,7 @@ class Stream {
             clock_gettime(CLOCK_REALTIME, &this->last);
         }
 
-        void stat(const std::string& data) {
+        void stat(const Flow& flow, const std::string& data) {
             Stream st;
             st.id = this->id;
             st.data = data;
@@ -116,11 +120,30 @@ class Stream {
             st.last = this->last;
             st.sent = this->sent;
             st.recv = this->recv;
+            st.state = flow;
             stats.push_back(st);
+
             this->sent = 0;
             this->recv = 0;
+            this->state = flow;
             clock_gettime(CLOCK_REALTIME, &this->initial);
             clock_gettime(CLOCK_REALTIME, &this->last);
+        }
+
+        void stat(const Flow& flow, const std::string::size_type& size) {
+            Stream& st = stats.back();
+            switch (flow) {
+                case Flow::CLIENT: {
+                    st.sent = st.sent + size;
+                    st.last = this->last;
+                    break;
+                }
+                case Flow::SERVER: {
+                    st.recv = st.recv + size;
+                    st.last = this->last;
+                    break;
+                }
+            }
         }
 
         bool is_expired(const std::time_t& secs) const {
@@ -133,7 +156,9 @@ class Stream {
 std::vector<Stream> Stream::stats;
 
 std::ostream& operator<<(std::ostream &output, const Stream& st) {
-   output << st.id << ",[" << st.data << "]," << st.sent << "," << st.recv << "," 
+   static const std::vector<std::string> STATES = { "UNK", "CLI", "SRV" };
+   output << st.id << ",[" << st.data << "]," << STATES.at(static_cast<std::int8_t>(st.state)) << "," 
+          << st.sent << "," << st.recv << "," 
           << fmt_time_secs(st.initial) << "," << fmt_time_secs(st.last) << ":"
           << diff_time_ms(st.initial, st.last) << std::endl;
    return output;
@@ -222,21 +247,35 @@ bool http_fin(const TCPCapStream& tcp) {
 bool http_inspect(Stream* pst, const Flow& flow, const std::string& payload, 
                   const std::string& mark, const std::string& lg){
     if (payload.length() > 0) {
-        std::size_t found = payload.find(mark);
-        if (found != std::string::npos) {
-            std::cout << "CAP: " << lg << std::endl;
-            std::size_t limit = payload.find("\r\n", found);
-            if (limit != std::string::npos) {
-                const std::string& data = payload.substr(found, limit);
-                switch (flow) {
-                    case Flow::CLIENT:
-                        pst->stat(data);
-                        break;
-                    case Flow::SERVER:
-                        pst->stat(data);
-                        break;
+        std::cout << "INSPECT: " << *pst << std::endl;
+        switch (pst->state) {
+            case Flow::UNKNOWN: {
+                std::size_t found = payload.find(mark);
+                if (found != std::string::npos) {
+                    std::cout << "CAP: " << lg << std::endl;
+                    std::size_t limit = payload.find("\r\n", found);
+                    if (limit != std::string::npos) {
+                        const std::string& data = payload.substr(found, limit);
+                        switch (flow) {
+                            case Flow::CLIENT:
+                                pst->stat(Flow::CLIENT, data);
+                                break;
+                            case Flow::SERVER:
+                                pst->stat(Flow::SERVER, data);
+                                break;
+                        }
+                        return true;
+                    }
                 }
-                return true;
+                break;
+            }
+            case Flow::CLIENT: {
+                pst->stat(Flow::CLIENT, payload.size());
+                break;
+            }
+            case Flow::SERVER: {
+                pst->stat(Flow::SERVER, payload.size());
+                break;
             }
         }
     }
