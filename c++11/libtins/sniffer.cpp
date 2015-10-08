@@ -231,16 +231,11 @@ bool http_fin(const TCPCapStream& tcp) {
     auto it = sessions.find(id); 
 
     if (it != sessions.end()) {
-        const std::string& lg = str(boost::format{"http,0x%1$08x,%2%,%3%,%4%,%5%,%6%,%7%:%8%"}
+        const std::string& lg = str(boost::format{"http,0x%1$08x,%2%"}
                                     % tcp.id()
-                                    % id
-                                    % it->second.sent
-                                    % it->second.recv
-                                    % tcp.is_finished()
-                                    % fmt_time_secs(it->second.initial).c_str()
-                                    % fmt_time_secs(it->second.last).c_str()
-                                    % diff_time_ms(it->second.initial, it->second.last));
+                                    % id);
         std::cout << "FIN: " << lg << std::endl;
+        sessions.erase(it);
     }
 }
 
@@ -331,7 +326,7 @@ bool http_cap(const TCPCapStream& tcp) {
     }
    
     if ((!skip) && (!http_inspect(pst, Flow::SERVER, server_tcpstream, "HTTP/", lg))) {
-       std::cout << "BIN: " << lg << std::endl;
+       std::cout << "CHK: " << lg << std::endl;
     }
 
     gc();
