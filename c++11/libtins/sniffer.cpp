@@ -30,8 +30,8 @@
 
 static std::mutex MUTEX;
 
-static const std::time_t SECS_TO_EXPIRE = 120;
-static const double      SECS_TO_GC = 60;
+static const std::time_t SECS_TO_EXPIRE = 3600;
+static const double      SECS_TO_GC = 300;
 
 enum class Flow : std::int8_t {UNKNOWN = 0, CLIENT = 1, SERVER = 2};
 
