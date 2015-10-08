@@ -124,7 +124,7 @@ void gc() {
     std::time_t now = std::time(nullptr);
 
     if (std::difftime(now, last) > SECS_TO_GC) {
-        for(auto it = sessions.begin(), ite = sessions.end(); it != ite;) {
+        for (auto it = sessions.begin(), ite = sessions.end(); it != ite;) {
             if (it->second.is_expired(SECS_TO_EXPIRE)) {
                 auto stime = diff_time_ms(it->second.initial, it->second.last);
                 std::cout << "STAT:" << it->second << ":" << stime << std::endl;
