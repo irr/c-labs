@@ -30,67 +30,10 @@
 
 static std::mutex MUTEX;
 
-static const std::time_t SECS_TO_EXPIRE = 5;
-static const double      SECS_TO_GC = 10;
+static const std::time_t SECS_TO_EXPIRE = 120;
+static const double      SECS_TO_GC = 60;
 
 enum class Flow : std::int8_t {CLIENT = 1, SERVER = 2};
-
-using namespace Tins;
-
-class Stream {
-    friend std::ostream &operator<<(std::ostream&, const Stream&);
-    public:
-        std::string id;
-        timespec initial;
-        timespec last;
-        std::string::size_type sent;
-        std::string::size_type recv;
-
-        Stream() {
-            this->id = "";
-            this->sent = 0;
-            this->recv = 0;
-            clock_gettime(CLOCK_REALTIME, &this->initial);
-            clock_gettime(CLOCK_REALTIME, &this->last);
-        }
-
-        virtual ~Stream() {}
-
-        Stream(const Stream& st) {
-            this->id = st.id;
-            this->initial = st.initial;
-            this->last = st.last;
-            this->sent = st.sent;
-            this->recv = st.recv;
-        }
-
-        Stream& operator=(const Stream& rhs) {
-           this->id = rhs.id;
-           this->initial = rhs.initial;
-           this->last = rhs.last;
-           this->sent = rhs.sent;
-           this->recv = rhs.recv;
-           return *this;
-        }
-
-        int operator==(const Stream& rhs) const {
-            return (this->id == rhs.id);
-        }
-
-        int operator<(const Stream& rhs) const {
-            return (this->id < rhs.id);
-        }
-
-        void touch() {
-            clock_gettime(CLOCK_REALTIME, &this->last);
-        }
-
-        bool is_expired(const std::time_t& secs) const {
-            timespec ts;
-            clock_gettime(CLOCK_REALTIME, &ts);
-            return ((this->initial.tv_sec + secs) < ts.tv_sec);
-        }
-};
 
 const std::string fmt_time_secs(const timespec& ts) noexcept  {
     const int n = 8;
@@ -110,8 +53,87 @@ long double diff_time_ms(const timespec& ns_start, const timespec& ns_end) noexc
     return ((long double) diff_time_ns(ns_start, ns_end) / 1000000);
 }
 
+using namespace Tins;
+
+class Stream {
+    friend std::ostream &operator<<(std::ostream&, const Stream&);
+    public:
+        static std::vector<Stream> stats;
+        std::string id;
+        std::string data;
+        timespec initial;
+        timespec last;
+        std::string::size_type sent;
+        std::string::size_type recv;
+
+        Stream() {
+            this->id = "";
+            this->data = "";
+            this->sent = 0;
+            this->recv = 0;
+            clock_gettime(CLOCK_REALTIME, &this->initial);
+            clock_gettime(CLOCK_REALTIME, &this->last);
+        }
+
+        virtual ~Stream() {}
+
+        Stream(const Stream& st) {
+            this->id = st.id;
+            this->data = st.data;
+            this->initial = st.initial;
+            this->last = st.last;
+            this->sent = st.sent;
+            this->recv = st.recv;
+        }
+
+        Stream& operator=(const Stream& rhs) {
+           this->id = rhs.id;
+           this->data = rhs.data;
+           this->initial = rhs.initial;
+           this->last = rhs.last;
+           this->sent = rhs.sent;
+           this->recv = rhs.recv;
+           return *this;
+        }
+
+        int operator==(const Stream& rhs) const {
+            return (this->id == rhs.id);
+        }
+
+        int operator<(const Stream& rhs) const {
+            return (this->id < rhs.id);
+        }
+
+        void touch() {
+            clock_gettime(CLOCK_REALTIME, &this->last);
+        }
+
+        void stat(const std::string& data) {
+            Stream st;
+            st.id = this->id;
+            st.data = data;
+            st.initial = this->initial;
+            st.last = this->last;
+            st.sent = this->sent;
+            st.recv = this->recv;
+            stats.push_back(st);
+            this->sent = 0;
+            this->recv = 0;
+            clock_gettime(CLOCK_REALTIME, &this->initial);
+            clock_gettime(CLOCK_REALTIME, &this->last);
+        }
+
+        bool is_expired(const std::time_t& secs) const {
+            timespec ts;
+            clock_gettime(CLOCK_REALTIME, &ts);
+            return ((this->initial.tv_sec + secs) < ts.tv_sec);
+        }
+};
+
+std::vector<Stream> Stream::stats;
+
 std::ostream& operator<<(std::ostream &output, const Stream& st) {
-   output << st.id << ',' << st.sent << "," << st.recv << "," 
+   output << st.id << ",[" << st.data << "]," << st.sent << "," << st.recv << "," 
           << fmt_time_secs(st.initial) << "," << fmt_time_secs(st.last) << ":"
           << diff_time_ms(st.initial, st.last) << std::endl;
    return output;
@@ -126,8 +148,7 @@ void gc() {
     if (std::difftime(now, last) > SECS_TO_GC) {
         for (auto it = sessions.begin(), ite = sessions.end(); it != ite;) {
             if (it->second.is_expired(SECS_TO_EXPIRE)) {
-                auto stime = diff_time_ms(it->second.initial, it->second.last);
-                std::cout << "STAT:" << it->second << ":" << stime << std::endl;
+                std::cout << "STAT:" << it->second << std::endl;
                 it = sessions.erase(it);
             }
             else {
@@ -155,7 +176,13 @@ void signal_callback_handler(int signum) {
 
     std::for_each(sessions.begin(), sessions.end(), 
                   [](const std::pair<std::string, Stream>& elem) {
-                    std::cout << elem.second << std::endl; });
+                        std::cout << elem.second << std::endl; 
+                    });
+
+    std::for_each(Stream::stats.begin(), Stream::stats.end(), 
+                  [](const Stream& st) {
+                        std::cout << st << std::endl; 
+                    });
 
     std::cout << "=======================================================" << std::endl;
     std::cout << boost::format("Caught signal {signum=%1%}\n") % signum;
@@ -198,14 +225,15 @@ bool http_inspect(Stream* pst, const Flow& flow, const std::string& payload,
         std::size_t found = payload.find(mark);
         if (found != std::string::npos) {
             std::cout << "CAP: " << lg << std::endl;
-            std::size_t limit = payload.find("\r\n\r\n", found);
+            std::size_t limit = payload.find("\r\n", found);
             if (limit != std::string::npos) {
                 const std::string& data = payload.substr(found, limit);
-                std::cout << data << std::endl;
                 switch (flow) {
                     case Flow::CLIENT:
+                        pst->stat(data);
                         break;
                     case Flow::SERVER:
+                        pst->stat(data);
                         break;
                 }
                 return true;
