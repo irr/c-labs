@@ -247,7 +247,6 @@ bool http_fin(const TCPCapStream& tcp) {
 bool http_inspect(Stream* pst, const Flow& flow, const std::string& payload, 
                   const std::string& mark, const std::string& lg){
     if (payload.length() > 0) {
-        std::cout << "INSPECT: " << *pst << std::endl;
         switch (pst->state) {
             case Flow::UNKNOWN: {
                 std::size_t found = payload.find(mark);
