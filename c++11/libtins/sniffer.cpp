@@ -215,14 +215,16 @@ void signal_callback_handler(int signum) {
                         tab.push_back(s);
                     });
 
-    const std::string f = (boost::format("| %%-%ds |\n") % n).str();
-    n += 4;
-    std::cout << std::string(n, '-') << std::endl;
-    std::for_each(tab.begin(), tab.end(), 
-                  [&f](const std::string& line) {
-                       std::cout << boost::format(f) % line;
-                    });
-    std::cout << std::string(n, '-') << std::endl;
+    if (n > 0) {
+        const std::string f = (boost::format("| %%-%ds |\n") % n).str();
+        n += 4;
+        std::cout << std::string(n, '-') << std::endl;
+        std::for_each(tab.begin(), tab.end(), 
+                      [&f](const std::string& line) {
+                           std::cout << boost::format(f) % line;
+                        });
+        std::cout << std::string(n, '-') << std::endl;
+    }
 
     std::cout << boost::format("Caught signal {signum=%1%}\n") % signum;
 }
