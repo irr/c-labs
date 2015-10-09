@@ -1,0 +1,10 @@
+import os
+env = Environment(ENV = os.environ, CCFLAGS='-g -std=c++11', LIBPATH=['/usr/local/lib', '/usr/local/lib64'])
+targets = {"test" : "test.cpp"}
+linkflags = '-Wl,-static -static-libgcc'
+common_sources = []
+CommonObjects = env.Object(common_sources)
+for target, file in targets.iteritems():
+    env.Program(target = target, source = [file, CommonObjects], LINKFLAGS=linkflags, 
+                LIBS = ['cassandra_static', 'uv', 'rt', 'pthread'])
+env.Clean('.', '.sconsign.dblite')
