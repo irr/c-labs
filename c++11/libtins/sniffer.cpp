@@ -360,8 +360,13 @@ void http_follower() {
 }
 
 int main() {
-    signal(SIGINT, signal_callback_handler);
-    signal(SIGUSR1, signal_callback_handler);
+    struct sigaction act;
+
+    memset(&act, 0, sizeof(act));
+    act.sa_handler = signal_callback_handler;
+
+    sigaction(SIGINT,  &act, 0);
+    sigaction(SIGUSR1, &act, 0);
 
     std::vector<std::function<decltype(http_follower)>> funcs = { http_follower };
     
