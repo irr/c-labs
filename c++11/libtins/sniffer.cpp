@@ -1,5 +1,5 @@
 // http://libtins.github.io
-// sudo yum install boost-devel glibc-static
+// sudo ./b2 link=static install --prefix=/usr/local
 // g++ -std=c++11 -o sniffer -Wl,-static -static-libgcc sniffer.cpp tcpcap_stream.cpp -L/usr/local/lib -lboost_iostreams -lrt -ltins -lpcap -lpthread
 
 #include <tins/tins.h>
@@ -25,6 +25,8 @@
 #include <utility>
 
 #include <boost/format.hpp>
+#include <boost/regex.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include "tcpcap_stream.hpp"
 
@@ -255,24 +257,42 @@ bool http_fin(const TCPCapStream& tcp) {
     }
 }
 
+const std::string http_command(const std::string& pattern, const std::string& data) {
+    const boost::regex expr{pattern};
+    boost::smatch what;
+    if (boost::regex_search(data, what, expr)) {
+        return what[1];
+    }
+    return "";
+}
+
 bool http_inspect(Stream* pst, const Flow& flow, const std::string& payload, 
-                  const std::string& mark, const std::string& lg){
+                  std::string mark, const std::string& lg){
     if (payload.length() > 0) {
         switch (pst->state) {
             case Flow::UNKNOWN: {
                 std::size_t found = payload.find(mark);
                 if (found != std::string::npos) {
                     std::cout << "CAP: " << lg << std::endl;
-                    std::size_t limit = payload.find("\r\n", found);
+                    std::size_t limit = payload.find("\r\n\r\n", found);
                     if (limit != std::string::npos) {
                         const std::string& data = payload.substr(found, limit);
                         switch (flow) {
-                            case Flow::CLIENT:
+                            case Flow::CLIENT: {
+                                std::string pattern = str(boost::format{"%1%\\s*?(\\S+).*?"} % mark);
+                                boost::trim(mark);
+                                std::cout << "\tMETHOD: " << mark << std::endl;
+                                std::string uri = http_command(pattern, data);
+                                std::cout << "\tURI: " << uri << std::endl;
+                                std::string host = http_command("^Host:\\s*?(\\S+).*?", data);
+                                std::cout << "\tHOST: " << host << std::endl;
                                 pst->stat(Flow::CLIENT, data);
                                 break;
-                            case Flow::SERVER:
+                            }
+                            case Flow::SERVER: {
                                 pst->stat(Flow::SERVER, data);
                                 break;
+                            }
                         }
                         return true;
                     }
