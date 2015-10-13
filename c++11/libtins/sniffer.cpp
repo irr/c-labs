@@ -18,15 +18,21 @@
 #include <iostream>
 #include <map>
 #include <mutex>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <thread>
 #include <vector>
 #include <utility>
 
-#include <boost/format.hpp>
-#include <boost/regex.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/archive/iterators/binary_from_base64.hpp>
+#include <boost/archive/iterators/base64_from_binary.hpp>
+#include <boost/archive/iterators/transform_width.hpp>
+#include <boost/format.hpp>
+#include <boost/property_tree/json_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/regex.hpp>
 
 #include "tcpcap_stream.hpp"
 
@@ -53,6 +59,22 @@ unsigned long long diff_time_ns(const timespec& ns_start, const timespec& ns_end
 
 long double diff_time_ms(const timespec& ns_start, const timespec& ns_end) noexcept {
     return ((long double) diff_time_ns(ns_start, ns_end) / 1000000);
+}
+
+std::string decode64(const std::string &val) {
+    using namespace boost::archive::iterators;
+    using It = transform_width<binary_from_base64<std::string::const_iterator>, 8, 6>;
+    return boost::algorithm::trim_right_copy_if(std::string(It(std::begin(val)), It(std::end(val))), 
+            [](char c) {
+                return c == '\0';
+    });
+}
+
+std::string encode64(const std::string &val) {
+    using namespace boost::archive::iterators;
+    using It = base64_from_binary<transform_width<std::string::const_iterator, 6, 8>>;
+    auto tmp = std::string(It(std::begin(val)), It(std::end(val)));
+    return tmp.append((3 - val.size() % 3) % 3, '=');
 }
 
 using namespace Tins;
@@ -124,7 +146,7 @@ class Stream {
             st.recv = this->recv;
             st.state = flow;
             stats.push_back(st);
-
+            std::cout << st << std::endl;
             this->sent = 0;
             this->recv = 0;
             this->state = flow;
@@ -279,18 +301,34 @@ bool http_inspect(Stream* pst, const Flow& flow, const std::string& payload,
                         const std::string& data = payload.substr(found, limit);
                         switch (flow) {
                             case Flow::CLIENT: {
-                                std::string pattern = str(boost::format{"%1%\\s*?(\\S+).*?"} % mark);
+                                const std::string uri = http_command(str(
+                                            boost::format{"%1%\\s*?(\\S+).*?"} % mark), data);
+                                const std::string host = http_command("^Host:\\s*?(\\S+).*?", data);
                                 boost::trim(mark);
-                                std::cout << "\tMETHOD: " << mark << std::endl;
-                                std::string uri = http_command(pattern, data);
-                                std::cout << "\tURI: " << uri << std::endl;
-                                std::string host = http_command("^Host:\\s*?(\\S+).*?", data);
-                                std::cout << "\tHOST: " << host << std::endl;
-                                pst->stat(Flow::CLIENT, data);
+                                boost::property_tree::basic_ptree<std::string, std::string> parts;
+                                parts.put<std::string>("method", mark);
+                                parts.put<std::string>("uri", encode64(uri));
+                                parts.put<std::string>("host", host);
+                                boost::property_tree::ptree root;
+                                root.put_child("json", parts);
+                                std::stringstream ss;
+                                boost::property_tree::json_parser::write_json(ss, root, false);
+                                pst->stat(Flow::CLIENT, ss.str());
                                 break;
                             }
                             case Flow::SERVER: {
-                                pst->stat(Flow::SERVER, data);
+                                std::string status = http_command(str(
+                                            boost::format{"%1%\\d+\\.\\d+\\s*?(\\S+).*?"} % mark), data);
+                                std::string version = http_command(str(
+                                            boost::format{"%1%(\\d+\\.\\d+)\\s*?\\S+.*?"} % mark), data);
+                                boost::property_tree::basic_ptree<std::string, std::string> parts;
+                                parts.put<std::string>("status", status);
+                                parts.put<std::string>("version", version);
+                                boost::property_tree::ptree root;
+                                root.put_child("json", parts);
+                                std::stringstream ss;
+                                boost::property_tree::json_parser::write_json(ss, root, false);
+                                pst->stat(Flow::SERVER, ss.str());
                                 break;
                             }
                         }
