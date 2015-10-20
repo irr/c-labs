@@ -40,7 +40,7 @@ int main() {
         http://geohash.org/6gycct0ntw0
     */
 
-    // double xy[2] = { latitude, longitude };
+    // double xy[2] = { longitude, latitude };
     double xy[2] = { -46.691657, -23.570018 };
 
     GeoHashRange r[2];
@@ -68,7 +68,7 @@ int main() {
     double res[2];
     geohashDecodeToLongLatWGS84(h, res);
 
-    printf("latitude: %.4f and longitude: %.4f [%s] = %ld\n", res[0], res[1], buf, bits);
+    printf("longitude: %.4f and latitude: %.4f [%s] = %ld\n", res[0], res[1], buf, bits);
 
     printf("decoded->uint_64t [%s] = %ld\n", buf, decode(buf));
 
