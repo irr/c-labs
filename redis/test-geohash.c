@@ -30,15 +30,18 @@ uint64_t decode(char* buf) {
 
 int main() {
     /*
-     gcc -std=gnu99 -I/opt/nosql/redis-unstable/deps/geohash-int -L/opt/nosql/redis-unstable/deps/geohash-int -o test /opt/nosql/redis-unstable/deps/geohash-int/geohash.c /opt/nosql/redis-unstable/deps/geohash-int/geohash_helper.c test-geohash.c -lm && ./test
+     gcc -std=gnu99 -I/opt/nosql/redis-unstable/deps/geohash-int -L/opt/nosql/redis-unstable/deps/geohash-int -o test /opt/nosql/redis-unstable/deps/geohash-int/geohash.c /opt/nosql/redis-unstable/deps/geohash-int/geohash_helper.c test-geohash.c -lm && ./test && rm -rf test
 
-        127.0.0.1:6379> geoadd irr 37.8324 12.5584 sp
+        127.0.0.1:6379> geoadd irr -46.691657 -23.570018 sp
         (integer) 1
         127.0.0.1:6379> geohash irr sp
-        1) "sf4zkyhtyz0"
+        1) "6gycct0ntw0"
+
+        http://geohash.org/6gycct0ntw0
     */
 
-    double xy[2] = { 37.8324, 12.5584 };
+    // double xy[2] = { latitude, longitude };
+    double xy[2] = { -46.691657, -23.570018 };
 
     GeoHashRange r[2];
     GeoHashBits hash;
