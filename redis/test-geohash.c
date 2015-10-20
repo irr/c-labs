@@ -68,7 +68,7 @@ int main() {
     double res[2];
     geohashDecodeToLongLatWGS84(h, res);
 
-    printf("longitude: %.4f and latitude: %.4f [%s] = %ld\n", res[0], res[1], buf, bits);
+    printf("longitude: %.8f and latitude: %.8f [%s] = %ld\n", res[0], res[1], buf, bits);
 
     printf("decoded->uint_64t [%s] = %ld\n", buf, decode(buf));
 
