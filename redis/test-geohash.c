@@ -23,12 +23,9 @@ uint64_t decode(char* buf) {
         }
     }
 
-    GeoHashRange r[2];
     GeoHashBits hash;
-
     geohashEncodeWGS84(*coords[1,1], *coords[1,0], GEO_STEP_MAX, &hash);
-    GeoHashFix52Bits h = geohashAlign52Bits(hash);
-    return h;
+    return geohashAlign52Bits(hash);
 }
 
 int main() {
