@@ -51,3 +51,7 @@ bits = geohash_decode64(hash)
 print("geohash (decode)...")
 print(string.format("longitude: %.8f and latitude: %.8f [%s] = %s\n", longitude, latitude, hash, bits))
 
+print("testing...")
+print(string.format("1.invalid longitude/latitude [%s]", geohash(1, 1111)));
+
+

@@ -9,7 +9,7 @@ char *geoalphabet= "0123456789bcdefghjkmnpqrstuvwxyz";
 
 void geohash(double longitude, double latitude, char* hash) {
     if ((fabs(longitude) > 180.0) || (fabs(latitude) > 90.0)) {
-        hash[0] = '\0';
+        strcpy(hash, "error");
         return;
     }
 
@@ -34,6 +34,9 @@ void geohash(double longitude, double latitude, char* hash) {
 }
 
 uint64_t geohash64(double longitude, double latitude) {
+    if ((fabs(longitude) > 180.0) || (fabs(latitude) > 90.0))
+        return 0;
+
     GeoHashBits h;
     geohashEncodeWGS84(longitude, latitude, GEO_STEP_MAX, &h);
     
