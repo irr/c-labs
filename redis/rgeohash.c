@@ -8,6 +8,11 @@
 char *geoalphabet= "0123456789bcdefghjkmnpqrstuvwxyz";
 
 void geohash(double longitude, double latitude, char* hash) {
+    if ((fabs(longitude) > 180.0) || (fabs(latitude) > 90.0)) {
+        hash[0] = '\0';
+        return;
+    }
+
     GeoHashRange r[2];
     GeoHashBits h;
 
