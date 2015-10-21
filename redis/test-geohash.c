@@ -1,76 +1,41 @@
 #include <stdio.h>
-#include <math.h>
-#include <string.h>
+#include "redis-geohash.h"
 
-#include "geohash.h"
-#include "geohash_helper.h"
+/*
+ *
+gcc -I/home/irocha/c/redis -L/home/irocha/c/redis -I/opt/nosql/redis-unstable/deps/geohash-int -L/opt/nosql/redis-unstable/deps/geohash-int -o test /opt/nosql/redis-unstable/deps/geohash-int/geohash.c /opt/nosql/redis-unstable/deps/geohash-int/geohash_helper.c -Wall -o test test-geohash.c -lredis-geohash -lm && LD_LIBRARY_PATH=/home/irocha/c/redis ./test
 
-char *geoalphabet= "0123456789bcdefghjkmnpqrstuvwxyz";
+127.0.0.1:6379> geoadd irr -46.691657 -23.570018 sp
+(integer) 1
+127.0.0.1:6379> geohash irr sp
+1) "6gycct0ntw0"
 
-uint64_t decode(char* buf) {
-    double coords[2][2] = { { -90.0, 90.0 }, 
-                            { -180.0, 180.0 } };
-    int bits[] = { 16, 8, 4, 2, 1 };
-    int flip = 1;
+http://geohash.org/6gycct0ntw0
 
-    for (int i = 0; i < 11; i++) {
-        char* pch = strchr(geoalphabet, buf[i]);
-        if (pch == NULL) return 0;
-        int pos = pch - geoalphabet;
-        for (int j = 0; j < 5; j++) {
-            coords[flip][((pos & bits[j]) > 0) ? 0 : 1] = (coords[flip][0] + coords[flip][1]) / 2.0;
-            flip = !flip;
-        }
-    }
+extern void geohash(double longitude, double latitude, char* hash);
+extern uint64_t geohash64(double longitude, double latitude);
 
-    GeoHashBits hash;
-    geohashEncodeWGS84(*coords[1,1], *coords[1,0], GEO_STEP_MAX, &hash);
-    return geohashAlign52Bits(hash);
-}
+extern void geohash_decode(uint64_t bits, double* longitude, double* latitude) {
+extern uint64_t geohash_decode64(char* buf);
+
+*/
 
 int main() {
-    /*
-     gcc -std=gnu99 -I/opt/nosql/redis-unstable/deps/geohash-int -L/opt/nosql/redis-unstable/deps/geohash-int -o test /opt/nosql/redis-unstable/deps/geohash-int/geohash.c /opt/nosql/redis-unstable/deps/geohash-int/geohash_helper.c test-geohash.c -lm && ./test && rm -rf test
+    double longitude = -46.691657;
+    double latitude = -23.570018;
+    char hash[12];
+    uint64_t bits;
 
-        127.0.0.1:6379> geoadd irr -46.691657 -23.570018 sp
-        (integer) 1
-        127.0.0.1:6379> geohash irr sp
-        1) "6gycct0ntw0"
+    geohash(longitude, latitude, hash);
+    bits = geohash64(longitude, latitude);    
 
-        http://geohash.org/6gycct0ntw0
-    */
+    printf("geohash...\n");
+    printf("longitude: %.8f and latitude: %.8f [%s] = %ld\n", longitude, latitude, hash, bits);
 
-    // double xy[2] = { longitude, latitude };
-    double xy[2] = { -46.691657, -23.570018 };
-
-    GeoHashRange r[2];
-    GeoHashBits hash;
-
-    geohashEncodeWGS84(xy[0], xy[1], GEO_STEP_MAX, &hash);
-    GeoHashFix52Bits bits = geohashAlign52Bits(hash);
-
-    r[0].min = -180;
-    r[0].max = 180;
-    r[1].min = -90;
-    r[1].max = 90;
-
-    geohashEncode(&r[0],&r[1],xy[0],xy[1],26,&hash);
-
-    char buf[12];
-    for (int i = 0; i < 11; i++) {
-        int idx = (hash.bits >> (52-((i+1)*5))) & 0x1f;
-        buf[i] = geoalphabet[idx];
-    }
-    buf[11] = '\0';
-
-    GeoHashBits h = { .bits = (uint64_t)bits, .step = GEO_STEP_MAX };
-
-    double res[2];
-    geohashDecodeToLongLatWGS84(h, res);
-
-    printf("longitude: %.8f and latitude: %.8f [%s] = %ld\n", res[0], res[1], buf, bits);
-
-    printf("decoded->uint_64t [%s] = %ld\n", buf, decode(buf));
+    printf("geohash (decode)...\n");
+    geohash_decode(bits, &longitude, &latitude);
+    bits = geohash_decode64(hash);
+    printf("longitude: %.8f and latitude: %.8f [%s] = %ld\n", longitude, latitude, hash, bits);
 
     return 0;
 }
