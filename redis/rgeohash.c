@@ -67,10 +67,10 @@ void geohash_decode(uint64_t bits, double* longitude, double* latitude) {
 /*
 
 SHARED:
-gcc -Werror -c -fpic -std=gnu99 geohash.c geohash_helper.c redis-geohash.c -lm && gcc -shared -o libredis-geohash.so redis-geohash.o && rm -rf *.o
+gcc -Werror -c -fpic -std=gnu99 geohash.c geohash_helper.c rgeohash.c -lm && gcc -shared -o librgeohash.so rgeohash.o geohash.o geohash_helper.o && rm -rf *.o
 
 STATIC:
-gcc -Werror -c -fpic -std=gnu99 geohash.c geohash_helper.c redis-geohash.c -lm && ar -cvq libredis-geohash.a redis-geohash.o geohash.o geohash_helper.o && rm -rf *.o
+gcc -Werror -c -fpic -std=gnu99 geohash.c geohash_helper.c rgeohash.c -lm && ar -cvq librgeohash.a rgeohash.o geohash.o geohash_helper.o && rm -rf *.o
 
 */
 
