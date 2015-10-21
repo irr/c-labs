@@ -2,8 +2,12 @@
 #include "redis-geohash.h"
 
 /*
- *
-gcc -I/home/irocha/c/redis -L/home/irocha/c/redis -I/opt/nosql/redis-unstable/deps/geohash-int -L/opt/nosql/redis-unstable/deps/geohash-int -o test /opt/nosql/redis-unstable/deps/geohash-int/geohash.c /opt/nosql/redis-unstable/deps/geohash-int/geohash_helper.c -Wall -o test test-geohash.c -lredis-geohash -lm && LD_LIBRARY_PATH=/home/irocha/c/redis ./test
+
+SHARED:
+gcc -I/home/irocha/c/redis -L/home/irocha/c/redis geohash.c geohash_helper.c -Wall -o test test-geohash.c -lredis-geohash -lm && LD_LIBRARY_PATH=/home/irocha/c/redis ./test
+
+STATIC:
+gcc -static -I/home/irocha/c/redis -L/home/irocha/c/redis -Wall -o test test-geohash.c -lredis-geohash -lm && ./test
 
 127.0.0.1:6379> geoadd irr -46.691657 -23.570018 sp
 (integer) 1

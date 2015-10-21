@@ -65,6 +65,12 @@ void geohash_decode(uint64_t bits, double* longitude, double* latitude) {
 }
 
 /*
-gcc -c -fpic -std=gnu99 -I/opt/nosql/redis-unstable/deps/geohash-int -L/opt/nosql/redis-unstable/deps/geohash-int /opt/nosql/redis-unstable/deps/geohash-int/geohash.c /opt/nosql/redis-unstable/deps/geohash-int/geohash_helper.c redis-geohash.c -lm && gcc -shared -o libredis-geohash.so redis-geohash.o
+
+SHARED:
+gcc -c -fpic -std=gnu99 geohash.c geohash_helper.c redis-geohash.c -lm && gcc -shared -o libredis-geohash.so redis-geohash.o
+
+STATIC:
+gcc -c -fpic -std=gnu99 geohash.c geohash_helper.c redis-geohash.c -lm && ar -cvq libredis-geohash.a redis-geohash.o geohash.o geohash_helper.o
+
 */
 
