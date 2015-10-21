@@ -9,6 +9,8 @@ gcc -I/home/irocha/c/redis -L/home/irocha/c/redis geohash.c geohash_helper.c -Wa
 STATIC:
 gcc -static -I/home/irocha/c/redis -L/home/irocha/c/redis -Wall -o test test-geohash.c -lredis-geohash -lm && ./test
 
+rm -rf *.o *.so *.a test
+
 127.0.0.1:6379> geoadd irr -46.691657 -23.570018 sp
 (integer) 1
 127.0.0.1:6379> geohash irr sp
