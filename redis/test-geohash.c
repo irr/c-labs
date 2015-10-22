@@ -4,10 +4,10 @@
 /*
 
 SHARED:
-gcc -I/home/irocha/c/redis -L/home/irocha/c/redis geohash.c geohash_helper.c -Wall -o test test-geohash.c -lrgeohash -lm && LD_LIBRARY_PATH=/home/irocha/c/redis ./test
+gcc -std=gnu99 -I/home/irocha/c/redis -L/home/irocha/c/redis -Wall -o test test-geohash.c -lrgeohash -lm && LD_LIBRARY_PATH=/home/irocha/c/redis ./test
 
 STATIC:
-gcc -static -I/home/irocha/c/redis -L/home/irocha/c/redis -Wall -o test test-geohash.c -lrgeohash -lm && ./test
+gcc -std=gnu99 -static -I/home/irocha/c/redis -L/home/irocha/c/redis -Wall -o test test-geohash.c -lrgeohash -lm && ./test
 
 rm -rf *.o *.so *.a test
 

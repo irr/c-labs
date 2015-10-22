@@ -1,0 +1,23 @@
+import os
+
+env = Environment(ENV = os.environ, 
+                  CCFLAGS='-g -std=gnu99', 
+                  LIBPATH=['/usr/local/lib'], 
+                  STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME=1)
+
+targets = {"rgeohash" : "rgeohash.c"}
+
+linkflags = '-Werror'
+
+common_sources = ['geohash.c', 'geohash_helper.c']
+CommonObjects = env.Object(common_sources)
+
+for target, file in targets.iteritems():
+    env.StaticLibrary(target = target, source = [file, CommonObjects], LINKFLAGS=linkflags, LIBS = ['rt', 'm'])
+env.Clean('.', '.sconsign.dblite')
+
+env['CCFLAGS'] = '-g -std=gnu99 -fpic'
+
+for target, file in targets.iteritems():
+    env.SharedLibrary(target = target, source = [file, CommonObjects], LINKFLAGS=linkflags, LIBS = ['rt', 'm'])
+env.Clean('.', '.sconsign.dblite')
