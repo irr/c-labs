@@ -24,7 +24,6 @@ void geohash_decode_sv(unsigned long bits, SV* longitude, SV* latitude) {
     sv_setnv(latitude, lat);
 }
 
-
 unsigned long geohash_decode64_sv(char* buf) {
     return (unsigned long) geohash_decode64(buf);
 }
