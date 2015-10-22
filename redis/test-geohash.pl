@@ -14,7 +14,7 @@ void geohash_sv(double longitude, double latitude, SV* res) {
 }
 
 unsigned long geohash64_sv(double longitude, double latitude) {
-    return (unsigned long)geohash64(longitude, latitude);
+    return (unsigned long) geohash64(longitude, latitude);
 }
 
 void geohash_decode_sv(unsigned long bits, SV* longitude, SV* latitude) {
