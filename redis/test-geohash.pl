@@ -1,5 +1,6 @@
 use Modern::Perl;
 use Data::Dumper;
+use File::Path;
 
 use Inline C => <<'END_C', LIBS => '-L/usr/local/lib -lrgeohash';
 
@@ -43,3 +44,6 @@ $hash64_sv = geohash_decode64_sv($hash);
 
 say(Dumper([$hash, $hash64, $longitude, $latitude, $hash64_sv], 
            [qw(hash hash64 longitude latitude hash64_sv)]));
+
+rmtree "_Inline";
+
