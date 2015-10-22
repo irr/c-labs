@@ -1,6 +1,6 @@
-use Modern::Perl;
 use Data::Dumper;
 use File::Path;
+use Modern::Perl;
 
 use Inline C => <<'END_C', LIBS => '-L/usr/local/lib -lrgeohash';
 
