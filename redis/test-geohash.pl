@@ -36,7 +36,7 @@ geohash_sv(-46.691657, -23.570018, $hash);
 
 $hash64 = geohash64_sv(-46.691657, -23.570018);
 
-geohash_decode_sv($hash64 + 0, $longitude, $latitude);
+geohash_decode_sv($hash64, $longitude, $latitude);
 
 $hash64_sv = geohash_decode64_sv($hash);
 

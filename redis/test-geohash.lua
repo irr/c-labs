@@ -25,8 +25,8 @@ end
 
 local function geohash_decode(bits)
     local b = ffi.new("uint64_t", bits)
-    local longitude = ffi.new("double[1]", 10.1)
-    local latitude = ffi.new("double[1]", 20.2)
+    local longitude = ffi.new("double[1]", 0)
+    local latitude = ffi.new("double[1]", 0)
     rgeo.geohash_decode(b, longitude, latitude)
     return longitude[0], latitude[0]
 end
