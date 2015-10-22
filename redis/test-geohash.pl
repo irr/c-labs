@@ -1,7 +1,7 @@
 use Modern::Perl;
 use Data::Dumper;
 
-use Inline C => <<'END_C', LIBS => '-lrgeohash'; 
+use Inline C => <<'END_C', LIBS => '-L/usr/local/lib -lrgeohash';
 
 #include <stdint.h>
 #include <string.h>
