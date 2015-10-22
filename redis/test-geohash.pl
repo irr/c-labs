@@ -4,7 +4,6 @@ use File::Path;
 
 use Inline C => <<'END_C', LIBS => '-L/usr/local/lib -lrgeohash';
 
-#include <stdint.h>
 #include <string.h>
 #include "rgeohash.h"
 
