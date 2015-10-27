@@ -1,5 +1,5 @@
 // http://libtins.github.io
-// sudo ./b2 link=static install --prefix=/usr/local
+// sudo ./b2 threading=multi link=static --layout=tagged install --prefix=/usr/local
 // g++ -std=c++11 -o sniffer -Wl,-static -static-libgcc sniffer.cpp tcpcap_stream.cpp -L/usr/local/lib -lboost_iostreams -lrt -ltins -lpcap -lpthread
 
 #include <tins/tins.h>
