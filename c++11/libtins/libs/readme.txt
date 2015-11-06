@@ -4,7 +4,7 @@ devtoolset-2
 ============
 http://people.centos.org/tru/devtools-2/readme
 sudo wget http://people.centos.org/tru/devtools-2/devtools-2.repo -O /etc/yum.repos.d/devtools-2.repo
-sudo yum install devtoolset-2-gcc devtoolset-2-binutils devtoolset-2-gcc-c++ devtoolset-2-elfutils devtoolset-2-valgrind devtoolset-2-dyninst devtoolset-2-strace.x86_64 devtoolset-2-gdb
+sudo yum install devtoolset-2-gcc devtoolset-2-binutils devtoolset-2-gcc-c++ devtoolset-2-elfutils devtoolset-2-valgrind devtoolset-2-dyninst devtoolset-2-strace.x86_64 devtoolset-2-gdb glibc-static libstdc++-static
 
 
 libpcap
