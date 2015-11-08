@@ -5,23 +5,51 @@ gcc -static -std=gnu99 test1.c -lCello -lpthread -lc -lm -ldl -o test
 
 #include "Cello.h"
 
+/* Type Variable */
+static var ExampleType;
+
+/* Type Struct */
+struct ExampleType {
+  int value;
+};
+
+/* Constructor Function */
+static void ExampleType_New(var self, var args) {
+  struct ExampleType* h = self;
+  h->value = c_int(get(args, $I(0)));
+}
+
+/* Comparison Function */
+static int ExampleType_Cmp(var self, var obj) {
+  struct ExampleType* lhs = self;
+  struct ExampleType* rhs = cast(obj, ExampleType);
+  return lhs->value - rhs->value;
+}
+
 int main(int argc, char** argv) {
+  
+  /* Construct `ExampleType` type dynamically */
+  ExampleType = new_root(Type,
+    $S("ExampleType"),              /* Type Name */ 
+    $I(sizeof(struct ExampleType)), /* Type Size */ 
+    $(New, ExampleType_New, NULL),  /* Type Interfaces */
+    $(Cmp, ExampleType_Cmp));       /* ... */
+  
+  print("%$ is a %$!\n", ExampleType, type_of(ExampleType));
 
-  /* Stack objects are created using "$" */
-  var int_item = $(Int, 5);
-  var float_item = $(Real, 2.4);
-  var string_item = $(String, "Hello");
-
-  /* Heap objects are created using "new" */
-  var items = new(List, int_item, float_item, string_item);
-
-  /* Collections can be looped over */
-  foreach (item in items) {
-    /* Types are also objects */
-    var type = type_of(item);
-    print("Object %$ has type %$\n", item, type);
-  }
-
-  /* Heap objects destroyed with "delete" */
-  delete(items); 
+  /* We can now make `ExampleType` objects */
+  var obj0 = new(ExampleType, $I(1));
+  var obj1 = new(ExampleType, $I(2));
+  
+  /* Test for comparison etc... */
+  print("Is %$ less Than %$? %s\n", 
+    obj0, obj1, lt(obj0, obj1) ? $S("Yes") : $S("No"));
+  
+  /* Type objects must remain around longer than their instances */
+  del(obj0); del(obj1);
+  
+  del_root(ExampleType);
+  
+  return 0;
+  
 }

@@ -3,40 +3,34 @@ gcc -std=gnu99 test0.c -lpthread -lm -ldl -lCello -o test
 gcc -static -std=gnu99 test0.c -lCello -lpthread -lc -lm -ldl -o test
 */
 
-#include <unistd.h>
-
 #include "Cello.h"
+
+/* Threaded Callback */
+var say_hello(var args) {
+  with (mutex in get(args, $I(0))) {
+    println("Hello from %$!", current(Thread));
+  }
+  return NULL;
+}
 
 int main(int argc, char** argv) {
 
-  var mut = new(Mutex);
+  /* Create a Mutex */
+  var mutex = new(Mutex);
   
-  lambda(thread_function, args) {
-    with(m in mut) {
-      println("Hello from %$! with Arguments %$", current(Thread), args);
-    }
-    return None;
-  };
+  /* Create Several Threads */
+  var threads = new(Array, Thread,
+    new(Thread, $(Function, say_hello)),
+    new(Thread, $(Function, say_hello)),
+    new(Thread, $(Function, say_hello)),
+    new(Thread, $(Function, say_hello)));
   
-  var threads = new(List,
-    new(Thread, thread_function),
-    new(Thread, thread_function),
-    new(Thread, thread_function),
-    new(Thread, thread_function),
-    new(Thread, thread_function));
+  /* Call each Thread */
+  foreach (t in threads) { call(t, mutex); }
   
-  foreach(t in threads) {
-    call(t);
-  }
-  
-  foreach(t in threads) {
-    join(t);
-    delete(t);
-  }
-  
-  delete(threads);
-  delete(mut);
+  /* Wait for each Thread to finish */
+  foreach (t in threads) { join(t); }
   
   return 0;
-
 }
+

@@ -7,40 +7,18 @@ gcc -static -std=gnu99 test2.c -lCello -lpthread -lc -lm -ldl -o test
 
 int main(int argc, char** argv) {
 
-  /* Tables require "Eq" and "Hash" on key type */
+  /* Shorthand $ can be used for basic types */
   var prices = new(Table, String, Int);
-  put(prices, $(String, "Apple"),  $(Int, 12)); 
-  put(prices, $(String, "Banana"), $(Int,  6)); 
-  put(prices, $(String, "Pear"),   $(Int, 55));
+  set(prices, $S("Apple"),  $I(12)); 
+  set(prices, $S("Banana"), $I( 6)); 
+  set(prices, $S("Pear"),   $I(55));
 
-  /* Tables also supports iteration */
+  /* Tables also support iteration */
   foreach (key in prices) {
-    var price = get(prices, key);
-    print("Price of %$ is %$\n", key, price);
+    var val = get(prices, key);
+    print("Price of %$ is %$\n", key, val);
   }
 
-  /* "with" automatically closes file at end of scope. */
-  with (file in stream_open($(File, NULL), "prices.bin", "wb")) {
-
-    /* First class function object */
-    lambda(write_pair, args) {
-
-      /* Run time type-checking with "cast" */
-      var key = cast(at(args, 0), String);
-      var val = cast(get(prices, key), Int);
-
-      try {
-        print_to(file, 0, "%$ :: %$\n", key, val);
-      } catch (e in IOError) {
-        println("Could not write to file - got %$", e);
-      }
-
-      return None;
-    };
-
-    /* Higher order functions */
-    map(prices, write_pair);
-  }
-
-  delete(prices);
+  return 0;
 }
+
