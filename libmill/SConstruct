@@ -1,0 +1,10 @@
+env = Environment(CCFLAGS='-std=c99', LIBPATH=['/usr/local/lib'])
+targets = { "test" : "test.c"}
+common_sources = []
+CommonObjects = env.Object(common_sources)
+for target, file in targets.iteritems():
+    env.Program(target = target, 
+                source = [file, CommonObjects], 
+                LIBPATH=['/usr/local/lib'], 
+                LIBS = [ 'pthread', 'm', 'mill'])
+env.Clean('.', '.sconsign.dblite')
